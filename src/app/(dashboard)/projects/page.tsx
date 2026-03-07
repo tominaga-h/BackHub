@@ -8,9 +8,15 @@ import { useProjectData } from "@/contexts/ProjectDataContext";
 import type { ProjectFilters } from "@/types";
 
 function buildDefaultFilters(
-  project: { settings: { assignees: { name: string }[]; issueTypes: { name: string }[]; milestones: { name: string }[] } },
+  project: { settings: { statuses: { name: string }[]; assignees: { name: string }[]; issueTypes: { name: string }[]; milestones: { name: string }[] } },
+  activeStatuses: Set<string>,
 ): ProjectFilters {
   return {
+    statuses: new Set(
+      project.settings.statuses
+        .map((s) => s.name)
+        .filter((name) => activeStatuses.has(name)),
+    ),
     assignees: new Set(project.settings.assignees.map((a) => a.name)),
     issueTypes: new Set(project.settings.issueTypes.map((t) => t.name)),
     milestones: new Set(project.settings.milestones.map((m) => m.name)),
@@ -18,9 +24,10 @@ function buildDefaultFilters(
 }
 
 function matchesProjectFilters(
-  issue: { assignee: { name: string } | null; issueType: string; milestones: string[] },
+  issue: { status: string; assignee: { name: string } | null; issueType: string; milestones: string[] },
   filters: ProjectFilters,
 ): boolean {
+  const statusMatch = filters.statuses.has(issue.status);
   const assigneeMatch = issue.assignee
     ? filters.assignees.has(issue.assignee.name)
     : true;
@@ -28,7 +35,7 @@ function matchesProjectFilters(
   const milestoneMatch =
     issue.milestones.length === 0 ||
     issue.milestones.some((m) => filters.milestones.has(m));
-  return assigneeMatch && typeMatch && milestoneMatch;
+  return statusMatch && assigneeMatch && typeMatch && milestoneMatch;
 }
 
 export default function ProjectsPage() {
@@ -38,19 +45,19 @@ export default function ProjectsPage() {
   const [filtersMap, setFiltersMap] = useState<Record<string, ProjectFilters>>({});
 
   useEffect(() => {
-    if (projects.length === 0) return;
+    if (projects.length === 0 || activeStatuses.size === 0) return;
     setFiltersMap((prev) => {
       const next = { ...prev };
       let changed = false;
       for (const p of projects) {
         if (!next[p.id]) {
-          next[p.id] = buildDefaultFilters(p);
+          next[p.id] = buildDefaultFilters(p, activeStatuses);
           changed = true;
         }
       }
       return changed ? next : prev;
     });
-  }, [projects]);
+  }, [projects, activeStatuses]);
 
   const activeProject = projects.find((p) => p.id === activeProjectId);
   const activeSettings = activeProject?.settings ?? null;

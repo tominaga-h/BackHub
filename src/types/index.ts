@@ -24,6 +24,8 @@ export type Issue = {
   priority: string;
   remarks: string;
   url: string;
+  created: string;
+  updated: string;
 };
 
 export type IssueType = {
@@ -54,6 +56,7 @@ export type Project = {
 };
 
 export type ProjectFilters = {
+  statuses: Set<string>;
   assignees: Set<string>;
   issueTypes: Set<string>;
   milestones: Set<string>;

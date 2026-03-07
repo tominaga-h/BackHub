@@ -29,6 +29,9 @@ export function ProjectSettingsSidebar({
   currentFilters,
   onApply,
 }: ProjectSettingsSidebarProps) {
+  const [selectedStatuses, setSelectedStatuses] = useState<Set<string>>(
+    new Set(),
+  );
   const [selectedAssignees, setSelectedAssignees] = useState<Set<string>>(
     new Set(),
   );
@@ -40,10 +43,14 @@ export function ProjectSettingsSidebar({
   useEffect(() => {
     if (!open) return;
     if (currentFilters) {
+      setSelectedStatuses(new Set(currentFilters.statuses));
       setSelectedAssignees(new Set(currentFilters.assignees));
       setSelectedTypes(new Set(currentFilters.issueTypes));
       setSelectedMilestones(new Set(currentFilters.milestones));
     } else if (settings) {
+      setSelectedStatuses(
+        new Set(settings.statuses.map((s) => s.name)),
+      );
       setSelectedAssignees(
         new Set(settings.assignees.map((a) => a.name)),
       );
@@ -71,6 +78,7 @@ export function ProjectSettingsSidebar({
 
   const handleApply = () => {
     onApply?.({
+      statuses: new Set(selectedStatuses),
       assignees: new Set(selectedAssignees),
       issueTypes: new Set(selectedTypes),
       milestones: new Set(selectedMilestones),
@@ -98,6 +106,33 @@ export function ProjectSettingsSidebar({
         )}
 
         <div className="mt-4 space-y-6">
+          {/* Statuses */}
+          <div>
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-orange-600">
+              Status
+            </h3>
+            <div className="space-y-2.5">
+              {settings.statuses.map((status) => (
+                <label
+                  key={status.name}
+                  className="flex cursor-pointer items-center gap-2"
+                >
+                  <Checkbox
+                    checked={selectedStatuses.has(status.name)}
+                    onCheckedChange={() =>
+                      toggle(setSelectedStatuses, status.name)
+                    }
+                  />
+                  <span
+                    className="h-2.5 w-2.5 rounded-full"
+                    style={{ backgroundColor: status.color }}
+                  />
+                  <span className="text-sm text-gray-700">{status.name}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
           {/* Assignees */}
           <div>
             <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-orange-600">
@@ -152,9 +187,20 @@ export function ProjectSettingsSidebar({
 
           {/* Milestones */}
           <div>
-            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-orange-600">
-              Milestones
-            </h3>
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-orange-600">
+                Milestones
+              </h3>
+              {selectedMilestones.size > 0 && (
+                <button
+                  type="button"
+                  className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                  onClick={() => setSelectedMilestones(new Set())}
+                >
+                  Clear
+                </button>
+              )}
+            </div>
             <div className="space-y-2.5">
               {settings.milestones.map((milestone) => (
                 <label

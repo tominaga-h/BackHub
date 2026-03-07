@@ -125,6 +125,8 @@ async function fetchProjectData(
     priority: issue.priority.name,
     remarks: "",
     url: `https://${host}/view/${issue.issueKey}`,
+    created: issue.created,
+    updated: issue.updated,
   }));
 
   return {

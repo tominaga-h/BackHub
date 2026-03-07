@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import type { Project, Issue, ProjectFilters } from "@/types";
 
-type SortKey = "id" | "title" | "assignee" | "issueType" | "status" | "milestone" | "remarks";
+type SortKey = "id" | "title" | "assignee" | "issueType" | "status" | "created" | "updated" | "milestone" | "remarks";
 type SortDirection = "asc" | "desc";
 
 type ColumnDef = {
@@ -22,13 +22,20 @@ type ColumnDef = {
 
 const COLUMNS: readonly ColumnDef[] = [
   { key: "issueType", label: "種別", width: "w-[100px]" },
-  { key: "id", label: "キー", width: "w-[250px]" },
-  { key: "title", label: "件名", width: "w-[1000px]" },
+  { key: "id", label: "キー", width: "w-[200px]" },
+  { key: "title", label: "件名", width: "w-[800px]" },
   { key: "assignee", label: "担当者", width: "w-[150px]" },
   { key: "status", label: "状態", width: "w-[130px]" },
+  { key: "created", label: "登録日", width: "w-[130px]" },
+  { key: "updated", label: "更新日", width: "w-[130px]" },
   { key: "milestone", label: "マイルストーン", width: "w-[180px]" },
   { key: "remarks", label: "備考", width: "w-[300px]" },
 ] as const;
+
+function formatDate(iso: string): string {
+  const d = new Date(iso);
+  return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}`;
+}
 
 function ColorBadge({ name, color }: { name: string; color: string }) {
   return (
@@ -78,6 +85,7 @@ export function ProjectSection({
     return project.issues.filter((issue) => {
       if (!activeStatuses.has(issue.status)) return false;
       if (!projectFilters) return true;
+      const statusMatch = projectFilters.statuses.has(issue.status);
       const assigneeMatch = issue.assignee
         ? projectFilters.assignees.has(issue.assignee.name)
         : true;
@@ -85,7 +93,7 @@ export function ProjectSection({
       const milestoneMatch =
         issue.milestones.length === 0 ||
         issue.milestones.some((m) => projectFilters.milestones.has(m));
-      return assigneeMatch && typeMatch && milestoneMatch;
+      return statusMatch && assigneeMatch && typeMatch && milestoneMatch;
     });
   }, [project.issues, activeStatuses, projectFilters]);
 
@@ -102,6 +110,8 @@ export function ProjectSection({
         case "title":
         case "issueType":
         case "status":
+        case "created":
+        case "updated":
         case "remarks":
           return issue[sortKey];
         default:
@@ -147,7 +157,7 @@ export function ProjectSection({
 
       {/* Issue Table */}
       <div className="overflow-x-scroll">
-        <table className="w-full min-w-[1300px] table-fixed">
+        <table className="w-full min-w-[1560px] table-fixed">
           <thead>
             <tr className="border-b border-gray-200">
               {COLUMNS.map((col) => {
@@ -229,6 +239,12 @@ export function ProjectSection({
                         statusColorMap.get(issue.status) ?? issue.statusColor
                       }
                     />
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-500">
+                    {formatDate(issue.created)}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-500">
+                    {formatDate(issue.updated)}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-700">
                     {issue.milestones.join(", ")}
