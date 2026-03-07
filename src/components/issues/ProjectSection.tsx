@@ -7,6 +7,7 @@ import {
   ArrowUp,
   ArrowDown,
   LayoutGrid,
+  Pencil,
 } from "lucide-react";
 import type { Project, Issue } from "@/types";
 
@@ -20,11 +21,11 @@ type ColumnDef = {
 };
 
 const COLUMNS: readonly ColumnDef[] = [
-  { key: "issueType", label: "種別", width: "w-[120px]" },
-  { key: "id", label: "キー", width: "w-[300px]" },
-  { key: "title", label: "件名", width: "" },
+  { key: "issueType", label: "種別", width: "w-[100px]" },
+  { key: "id", label: "キー", width: "w-[250px]" },
+  { key: "title", label: "件名", width: "w-[1000px]" },
   { key: "assignee", label: "担当者", width: "w-[150px]" },
-  { key: "status", label: "状態", width: "w-[150px]" },
+  { key: "status", label: "状態", width: "w-[130px]" },
   { key: "remarks", label: "備考", width: "w-[300px]" },
 ] as const;
 
@@ -44,15 +45,19 @@ type ProjectSectionProps = {
   project: Project;
   onOpenSettings: (projectId: string) => void;
   activeStatuses: Set<string>;
+  onRemarksChange?: (issueId: string, remarks: string) => void;
 };
 
 export function ProjectSection({
   project,
   onOpenSettings,
   activeStatuses,
+  onRemarksChange,
 }: ProjectSectionProps) {
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+  const [editingIssueId, setEditingIssueId] = useState<string | null>(null);
+  const [remarksMap, setRemarksMap] = useState<Record<string, string>>({});
 
   const handleSort = useCallback(
     (key: SortKey) => {
@@ -106,7 +111,7 @@ export function ProjectSection({
     <div
       data-component="ProjectSection"
       id={`project-${project.name.toLowerCase().replace(/\s+/g, "-")}`}
-      className="overflow-hidden rounded-lg border border-gray-200 bg-white"
+      className="overflow-clip rounded-lg border border-gray-200 bg-white"
     >
       {/* Project Header */}
       <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-4 py-3">
@@ -125,8 +130,8 @@ export function ProjectSection({
       </div>
 
       {/* Issue Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[900px]">
+      <div className="overflow-x-scroll">
+        <table className="w-full min-w-[1300px] table-fixed">
           <thead>
             <tr className="border-b border-gray-200">
               {COLUMNS.map((col) => {
@@ -209,8 +214,40 @@ export function ProjectSection({
                       }
                     />
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-500">
-                    {issue.remarks}
+                  <td
+                    className="px-4 py-3 text-sm text-gray-500"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {editingIssueId === issue.id ? (
+                      <input
+                        type="text"
+                        autoFocus
+                        className="w-full rounded border border-gray-300 px-2 py-1 text-sm text-gray-700 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+                        defaultValue={remarksMap[issue.id] ?? issue.remarks}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            const value = e.currentTarget.value;
+                            setRemarksMap((prev) => ({ ...prev, [issue.id]: value }));
+                            onRemarksChange?.(issue.id, value);
+                            setEditingIssueId(null);
+                          }
+                          if (e.key === "Escape") {
+                            setEditingIssueId(null);
+                          }
+                        }}
+                      />
+                    ) : (
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          className="shrink-0 text-gray-400 hover:text-gray-600"
+                          onClick={() => setEditingIssueId(issue.id)}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <span>{remarksMap[issue.id] ?? issue.remarks}</span>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))

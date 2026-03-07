@@ -91,6 +91,11 @@ export default function Home() {
     setSidebarOpen(true);
   };
 
+  const handleRemarksChange = (issueId: string, remarks: string) => {
+    // TODO: Supabase 導入後に DB 保存処理に置き換え
+    console.log("remarks changed:", issueId, remarks);
+  };
+
   if (loading) {
     return (
       <div data-component="Home" className="flex min-h-screen flex-col bg-[#f5f7f9]">
@@ -140,6 +145,7 @@ export default function Home() {
               project={project}
               onOpenSettings={handleOpenSettings}
               activeStatuses={activeStatuses}
+              onRemarksChange={handleRemarksChange}
             />
           ))}
         </div>
