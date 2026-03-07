@@ -10,18 +10,7 @@ export function Header() {
       {/* Left: Logo */}
       <div className="flex items-center gap-2.5">
         <div className="flex h-8 w-8 items-center justify-center rounded bg-backhub">
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="white"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3" />
-          </svg>
+          <img src="/logo.svg" alt="BackHub" width="32" height="32" />
         </div>
         <span className="text-xl font-bold tracking-tight text-gray-800">
           Back<span className="text-backhub">Hub</span>
