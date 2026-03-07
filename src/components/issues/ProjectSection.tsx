@@ -121,7 +121,7 @@ export function ProjectSection({
                 {
                   key: "id" as SortKey,
                   label: "ID",
-                  width: "w-[200px]",
+                  width: "w-[300px]",
                 },
                 { key: "title" as SortKey, label: "Issue Title", width: "" },
                 {
@@ -132,12 +132,12 @@ export function ProjectSection({
                 {
                   key: "status" as SortKey,
                   label: "Status",
-                  width: "w-[140px]",
+                  width: "w-[150px]",
                 },
                 {
                   key: "remarks" as SortKey,
                   label: "Remarks",
-                  width: "w-[220px]",
+                  width: "w-[300px]",
                 },
               ].map((col) => {
                 const isActive = sortKey === col.key;
