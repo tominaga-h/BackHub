@@ -5,29 +5,31 @@ import { Plus } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 
-const STATUS_OPTIONS = ["Open", "In Progress", "Closed"] as const;
+export const STATUS_OPTIONS = ["Open", "In Progress", "Closed"] as const;
 
 type GlobalFilterBarProps = {
   projectNames: string[];
   onProjectSelect?: (projectName: string | null) => void;
+  activeStatuses: Set<string>;
+  onStatusChange: (statuses: Set<string>) => void;
 };
 
-export function GlobalFilterBar({ projectNames, onProjectSelect }: GlobalFilterBarProps) {
+export function GlobalFilterBar({
+  projectNames,
+  onProjectSelect,
+  activeStatuses,
+  onStatusChange,
+}: GlobalFilterBarProps) {
   const [activeProject, setActiveProject] = useState("All Projects");
-  const [activeStatuses, setActiveStatuses] = useState<Set<string>>(
-    new Set(["Open", "In Progress"])
-  );
 
   const toggleStatus = (status: string) => {
-    setActiveStatuses((prev) => {
-      const next = new Set(prev);
-      if (next.has(status)) {
-        next.delete(status);
-      } else {
-        next.add(status);
-      }
-      return next;
-    });
+    const next = new Set(activeStatuses);
+    if (next.has(status)) {
+      next.delete(status);
+    } else {
+      next.add(status);
+    }
+    onStatusChange(next);
   };
 
   const tabs = ["All Projects", ...projectNames];

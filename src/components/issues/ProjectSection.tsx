@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { Settings, Download, ArrowUpDown, LayoutGrid } from "lucide-react";
 import {
   Table,
@@ -11,6 +12,12 @@ import {
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import type { Project, IssueStatus } from "@/types";
+
+const STATUS_LABEL_TO_DATA: Record<string, IssueStatus> = {
+  Open: "OPEN",
+  "In Progress": "IN PROGRESS",
+  Closed: "CLOSED",
+};
 
 function StatusBadge({ status }: { status: IssueStatus }) {
   const styles: Record<IssueStatus, string> = {
@@ -31,12 +38,21 @@ function StatusBadge({ status }: { status: IssueStatus }) {
 type ProjectSectionProps = {
   project: Project;
   onOpenSettings: (projectId: string) => void;
+  activeStatuses: Set<string>;
 };
 
 export function ProjectSection({
   project,
   onOpenSettings,
+  activeStatuses,
 }: ProjectSectionProps) {
+  const filteredIssues = useMemo(() => {
+    const dataStatuses = new Set(
+      [...activeStatuses].map((s) => STATUS_LABEL_TO_DATA[s]).filter(Boolean)
+    );
+    return project.issues.filter((issue) => dataStatuses.has(issue.status));
+  }, [project.issues, activeStatuses]);
+
   return (
     <div id={`project-${project.name.toLowerCase().replace(/\s+/g, '-')}`} className="overflow-hidden rounded-lg border border-gray-200 bg-white">
       {/* Project Header */}
@@ -86,40 +102,48 @@ export function ProjectSection({
             </tr>
           </thead>
           <tbody>
-            {project.issues.map((issue) => (
-              <tr
-                key={issue.id}
-                className="cursor-pointer border-b border-gray-100 last:border-b-0 hover:bg-gray-50"
-                onClick={() => window.open("#", "_blank")}
-              >
-                <td className="px-4 py-3 text-sm font-medium text-gray-600">
-                  {issue.id}
-                </td>
-                <td className="px-4 py-3 text-sm text-gray-800">
-                  {issue.title}
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <Avatar className="h-7 w-7 shrink-0">
-                      <AvatarFallback
-                        className={`text-xs font-medium ${issue.assignee.avatarColor}`}
-                      >
-                        {issue.assignee.initials}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="truncate text-sm text-gray-700">
-                      {issue.assignee.name}
-                    </span>
-                  </div>
-                </td>
-                <td className="px-4 py-3">
-                  <StatusBadge status={issue.status} />
-                </td>
-                <td className="px-4 py-3 text-sm text-gray-500">
-                  {issue.remarks}
+            {filteredIssues.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="px-4 py-8 text-center text-sm text-gray-400">
+                  No matching issues
                 </td>
               </tr>
-            ))}
+            ) : (
+              filteredIssues.map((issue) => (
+                <tr
+                  key={issue.id}
+                  className="cursor-pointer border-b border-gray-100 last:border-b-0 hover:bg-gray-50"
+                  onClick={() => window.open("#", "_blank")}
+                >
+                  <td className="px-4 py-3 text-sm font-medium text-gray-600">
+                    {issue.id}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-800">
+                    {issue.title}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <Avatar className="h-7 w-7 shrink-0">
+                        <AvatarFallback
+                          className={`text-xs font-medium ${issue.assignee.avatarColor}`}
+                        >
+                          {issue.assignee.initials}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="truncate text-sm text-gray-700">
+                        {issue.assignee.name}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <StatusBadge status={issue.status} />
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-500">
+                    {issue.remarks}
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
