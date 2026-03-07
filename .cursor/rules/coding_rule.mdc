@@ -4,8 +4,16 @@ alwaysApply: true
 
 # コーディング規約
 
-## data-component 属性
+## HTML
+
+### data-component 属性
 
 - 全てのReactコンポーネント関数が返すルートDOM要素に `data-component="コンポーネント名"` 属性を付与すること
 - コンポーネント名は関数名と一致させること（例: `function Header()` なら `data-component="Header"`）
 - コンテキストプロバイダーなどDOM要素を描画しないコンポーネントの場合は、最初に描画されるDOM子要素に付与すること
+
+## TypeScript
+
+### TSX
+
+- HTML内でTypeScriptの配列やオブジェクトの定義をしないこと。かならずTypeScriptで定義し、それをTSX内で使用するようにしなさい。

@@ -14,6 +14,20 @@ import type { Project, Issue } from "@/types";
 type SortKey = "id" | "title" | "assignee" | "status" | "remarks";
 type SortDirection = "asc" | "desc";
 
+type ColumnDef = {
+  key: SortKey;
+  label: string;
+  width: string;
+};
+
+const COLUMNS: readonly ColumnDef[] = [
+  { key: "id", label: "ID", width: "w-[300px]" },
+  { key: "title", label: "Issue Title", width: "" },
+  { key: "assignee", label: "Assignee", width: "w-[150px]" },
+  { key: "status", label: "Status", width: "w-[150px]" },
+  { key: "remarks", label: "Remarks", width: "w-[300px]" },
+] as const;
+
 function StatusBadge({ name, color }: { name: string; color: string }) {
   return (
     <span
@@ -117,29 +131,7 @@ export function ProjectSection({
         <table className="w-full min-w-[900px]">
           <thead>
             <tr className="border-b border-gray-200">
-              {[
-                {
-                  key: "id" as SortKey,
-                  label: "ID",
-                  width: "w-[300px]",
-                },
-                { key: "title" as SortKey, label: "Issue Title", width: "" },
-                {
-                  key: "assignee" as SortKey,
-                  label: "Assignee",
-                  width: "w-[150px]",
-                },
-                {
-                  key: "status" as SortKey,
-                  label: "Status",
-                  width: "w-[150px]",
-                },
-                {
-                  key: "remarks" as SortKey,
-                  label: "Remarks",
-                  width: "w-[300px]",
-                },
-              ].map((col) => {
+              {COLUMNS.map((col) => {
                 const isActive = sortKey === col.key;
                 const SortIcon = isActive
                   ? sortDirection === "asc"

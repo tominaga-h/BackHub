@@ -76,6 +76,11 @@ export default function Home() {
     window.scrollTo({ top, behavior: "smooth" });
   };
 
+  const projectNames = useMemo(
+    () => projects.map((p) => p.name),
+    [projects],
+  );
+
   const handleOpenSettings = (projectId: string) => {
     setActiveProjectId(projectId);
     setSidebarOpen(true);
@@ -115,7 +120,7 @@ export default function Home() {
     <div data-component="Home" className="flex min-h-screen flex-col bg-[#f5f7f9]">
       <Header />
       <GlobalFilterBar
-        projectNames={projects.map((p) => p.name)}
+        projectNames={projectNames}
         onProjectSelect={handleProjectSelect}
         statusOptions={statusOptions}
         activeStatuses={activeStatuses}
