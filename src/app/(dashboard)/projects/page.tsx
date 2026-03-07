@@ -5,6 +5,7 @@ import { ProjectSection } from "@/components/issues/ProjectSection";
 import { ProjectSettingsSidebar } from "@/components/filters/ProjectSettingsSidebar";
 import { Button } from "@/components/ui/button";
 import { useProjectData } from "@/contexts/ProjectDataContext";
+import { UNSET_MILESTONE } from "@/types";
 import type { ProjectFilters } from "@/types";
 
 function buildDefaultFilters(
@@ -19,7 +20,7 @@ function buildDefaultFilters(
     ),
     assignees: new Set(project.settings.assignees.map((a) => a.name)),
     issueTypes: new Set(project.settings.issueTypes.map((t) => t.name)),
-    milestones: new Set(project.settings.milestones.map((m) => m.name)),
+    milestones: new Set([UNSET_MILESTONE, ...project.settings.milestones.map((m) => m.name)]),
   };
 }
 
@@ -33,8 +34,9 @@ function matchesProjectFilters(
     : true;
   const typeMatch = filters.issueTypes.has(issue.issueType);
   const milestoneMatch =
-    issue.milestones.length === 0 ||
-    issue.milestones.some((m) => filters.milestones.has(m));
+    issue.milestones.length === 0
+      ? filters.milestones.has(UNSET_MILESTONE)
+      : issue.milestones.some((m) => filters.milestones.has(m));
   return statusMatch && assigneeMatch && typeMatch && milestoneMatch;
 }
 
@@ -136,6 +138,7 @@ export default function ProjectsPage() {
         settings={activeSettings}
         currentFilters={activeFilters}
         onApply={handleApplyFilters}
+        issues={activeProject?.issues}
       />
     </div>
   );

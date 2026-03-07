@@ -62,6 +62,8 @@ export type ProjectFilters = {
   milestones: Set<string>;
 };
 
+export const UNSET_MILESTONE = "__UNSET_MILESTONE__";
+
 export type IssueWithProject = Issue & {
   projectName: string;
   projectKey: string;

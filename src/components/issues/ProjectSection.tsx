@@ -9,6 +9,7 @@ import {
   LayoutGrid,
   Pencil,
 } from "lucide-react";
+import { UNSET_MILESTONE } from "@/types";
 import type { Project, Issue, ProjectFilters } from "@/types";
 
 type SortKey = "id" | "title" | "assignee" | "issueType" | "status" | "created" | "updated" | "milestone" | "remarks";
@@ -91,8 +92,9 @@ export function ProjectSection({
         : true;
       const typeMatch = projectFilters.issueTypes.has(issue.issueType);
       const milestoneMatch =
-        issue.milestones.length === 0 ||
-        issue.milestones.some((m) => projectFilters.milestones.has(m));
+        issue.milestones.length === 0
+          ? projectFilters.milestones.has(UNSET_MILESTONE)
+          : issue.milestones.some((m) => projectFilters.milestones.has(m));
       return statusMatch && assigneeMatch && typeMatch && milestoneMatch;
     });
   }, [project.issues, activeStatuses, projectFilters]);

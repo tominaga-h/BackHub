@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Settings } from "lucide-react";
 import {
   Sheet,
@@ -10,7 +10,8 @@ import {
 } from "@/components/ui/sheet";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import type { ProjectFilters, ProjectSettings } from "@/types";
+import { UNSET_MILESTONE } from "@/types";
+import type { Issue, ProjectFilters, ProjectSettings } from "@/types";
 
 type ProjectSettingsSidebarProps = {
   open: boolean;
@@ -19,6 +20,7 @@ type ProjectSettingsSidebarProps = {
   settings: ProjectSettings | null;
   currentFilters?: ProjectFilters;
   onApply?: (filters: ProjectFilters) => void;
+  issues?: Issue[];
 };
 
 export function ProjectSettingsSidebar({
@@ -28,6 +30,7 @@ export function ProjectSettingsSidebar({
   settings,
   currentFilters,
   onApply,
+  issues = [],
 }: ProjectSettingsSidebarProps) {
   const [selectedStatuses, setSelectedStatuses] = useState<Set<string>>(
     new Set(),
@@ -56,10 +59,53 @@ export function ProjectSettingsSidebar({
       );
       setSelectedTypes(new Set(settings.issueTypes.map((t) => t.name)));
       setSelectedMilestones(
-        new Set(settings.milestones.map((m) => m.name)),
+        new Set([UNSET_MILESTONE, ...settings.milestones.map((m) => m.name)]),
       );
     }
   }, [open, currentFilters, settings]);
+
+  const statusFilteredIssues = useMemo(
+    () => issues.filter((issue) => selectedStatuses.has(issue.status)),
+    [issues, selectedStatuses],
+  );
+
+  const assigneeIssueCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const issue of statusFilteredIssues) {
+      const name = issue.assignee?.name;
+      if (name) {
+        counts.set(name, (counts.get(name) ?? 0) + 1);
+      }
+    }
+    return counts;
+  }, [statusFilteredIssues]);
+
+  const visibleAssignees = useMemo(
+    () => settings?.assignees.filter((a) => assigneeIssueCounts.has(a.name)) ?? [],
+    [settings?.assignees, assigneeIssueCounts],
+  );
+
+  const issueTypeIssueCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const issue of statusFilteredIssues) {
+      counts.set(issue.issueType, (counts.get(issue.issueType) ?? 0) + 1);
+    }
+    return counts;
+  }, [statusFilteredIssues]);
+
+  const milestoneIssueCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const issue of statusFilteredIssues) {
+      if (issue.milestones.length === 0) {
+        counts.set(UNSET_MILESTONE, (counts.get(UNSET_MILESTONE) ?? 0) + 1);
+      } else {
+        for (const m of issue.milestones) {
+          counts.set(m, (counts.get(m) ?? 0) + 1);
+        }
+      }
+    }
+    return counts;
+  }, [statusFilteredIssues]);
 
   const toggle = (
     setter: React.Dispatch<React.SetStateAction<Set<string>>>,
@@ -102,7 +148,7 @@ export function ProjectSettingsSidebar({
         </SheetHeader>
 
         {projectName && (
-          <p className="mt-4 text-sm font-bold text-gray-800">{projectName}</p>
+          <p className="mt-4 text-sm font-bold text-gray-800 border-b bordery-gray-200 pb-3">{projectName}</p>
         )}
 
         <div className="mt-4 space-y-6">
@@ -139,22 +185,27 @@ export function ProjectSettingsSidebar({
               Assignees
             </h3>
             <div className="space-y-2.5">
-              {settings.assignees.map((assignee) => (
-                <label
-                  key={assignee.name}
-                  className="flex cursor-pointer items-center gap-2"
-                >
-                  <Checkbox
-                    checked={selectedAssignees.has(assignee.name)}
-                    onCheckedChange={() =>
-                      toggle(setSelectedAssignees, assignee.name)
-                    }
-                  />
-                  <span className="text-sm text-gray-700">
-                    {assignee.name}
-                  </span>
-                </label>
-              ))}
+              {visibleAssignees.length === 0 ? (
+                <p className="text-xs text-gray-400">No assignees for selected statuses</p>
+              ) : (
+                visibleAssignees.map((assignee) => (
+                  <label
+                    key={assignee.name}
+                    className="flex cursor-pointer items-center gap-2"
+                  >
+                    <Checkbox
+                      checked={selectedAssignees.has(assignee.name)}
+                      onCheckedChange={() =>
+                        toggle(setSelectedAssignees, assignee.name)
+                      }
+                    />
+                    <span className="text-sm text-gray-700">
+                      {assignee.name}
+                      <span className="ml-1 text-gray-400">({assigneeIssueCounts.get(assignee.name) ?? 0})</span>
+                    </span>
+                  </label>
+                ))
+              )}
             </div>
           </div>
 
@@ -179,7 +230,10 @@ export function ProjectSettingsSidebar({
                     className="h-2.5 w-2.5 rounded-full"
                     style={{ backgroundColor: type.color }}
                   />
-                  <span className="text-sm text-gray-700">{type.name}</span>
+                  <span className="text-sm text-gray-700">
+                    {type.name}
+                    <span className="ml-1 text-gray-400">({issueTypeIssueCounts.get(type.name) ?? 0})</span>
+                  </span>
                 </label>
               ))}
             </div>
@@ -202,6 +256,18 @@ export function ProjectSettingsSidebar({
               )}
             </div>
             <div className="space-y-2.5">
+              <label className="flex cursor-pointer items-center gap-2">
+                <Checkbox
+                  checked={selectedMilestones.has(UNSET_MILESTONE)}
+                  onCheckedChange={() =>
+                    toggle(setSelectedMilestones, UNSET_MILESTONE)
+                  }
+                />
+                <span className="text-sm text-gray-500 italic">
+                  未登録
+                  <span className="ml-1 text-gray-400">({milestoneIssueCounts.get(UNSET_MILESTONE) ?? 0})</span>
+                </span>
+              </label>
               {settings.milestones.map((milestone) => (
                 <label
                   key={milestone.name}
@@ -215,6 +281,7 @@ export function ProjectSettingsSidebar({
                   />
                   <span className="text-sm text-gray-700">
                     {milestone.name}
+                    <span className="ml-1 text-gray-400">({milestoneIssueCounts.get(milestone.name) ?? 0})</span>
                   </span>
                 </label>
               ))}
@@ -222,13 +289,13 @@ export function ProjectSettingsSidebar({
           </div>
         </div>
 
-        {/* Update Filters Button */}
+        {/* Update Setting Button */}
         <div className="mt-8">
           <Button
             className="w-full bg-backhub text-white hover:bg-backhub-hover p-5 font-bold"
             onClick={handleApply}
           >
-            Update Filters
+            Update Setting
           </Button>
         </div>
       </SheetContent>
