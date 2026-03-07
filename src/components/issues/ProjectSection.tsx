@@ -9,9 +9,9 @@ import {
   LayoutGrid,
   Pencil,
 } from "lucide-react";
-import type { Project, Issue } from "@/types";
+import type { Project, Issue, ProjectFilters } from "@/types";
 
-type SortKey = "id" | "title" | "assignee" | "issueType" | "status" | "remarks";
+type SortKey = "id" | "title" | "assignee" | "issueType" | "status" | "milestone" | "remarks";
 type SortDirection = "asc" | "desc";
 
 type ColumnDef = {
@@ -26,6 +26,7 @@ const COLUMNS: readonly ColumnDef[] = [
   { key: "title", label: "件名", width: "w-[1000px]" },
   { key: "assignee", label: "担当者", width: "w-[150px]" },
   { key: "status", label: "状態", width: "w-[130px]" },
+  { key: "milestone", label: "マイルストーン", width: "w-[180px]" },
   { key: "remarks", label: "備考", width: "w-[300px]" },
 ] as const;
 
@@ -45,6 +46,7 @@ type ProjectSectionProps = {
   project: Project;
   onOpenSettings: (projectId: string) => void;
   activeStatuses: Set<string>;
+  projectFilters?: ProjectFilters;
   onRemarksChange?: (issueId: string, remarks: string) => void;
 };
 
@@ -52,6 +54,7 @@ export function ProjectSection({
   project,
   onOpenSettings,
   activeStatuses,
+  projectFilters,
   onRemarksChange,
 }: ProjectSectionProps) {
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
@@ -72,8 +75,19 @@ export function ProjectSection({
   );
 
   const filteredIssues = useMemo(() => {
-    return project.issues.filter((issue) => activeStatuses.has(issue.status));
-  }, [project.issues, activeStatuses]);
+    return project.issues.filter((issue) => {
+      if (!activeStatuses.has(issue.status)) return false;
+      if (!projectFilters) return true;
+      const assigneeMatch = issue.assignee
+        ? projectFilters.assignees.has(issue.assignee.name)
+        : true;
+      const typeMatch = projectFilters.issueTypes.has(issue.issueType);
+      const milestoneMatch =
+        issue.milestones.length === 0 ||
+        issue.milestones.some((m) => projectFilters.milestones.has(m));
+      return assigneeMatch && typeMatch && milestoneMatch;
+    });
+  }, [project.issues, activeStatuses, projectFilters]);
 
   const sortedIssues = useMemo(() => {
     if (!sortKey) return filteredIssues;
@@ -82,6 +96,8 @@ export function ProjectSection({
       switch (sortKey) {
         case "assignee":
           return issue.assignee?.name ?? "";
+        case "milestone":
+          return issue.milestones.join(", ");
         case "id":
         case "title":
         case "issueType":
@@ -162,7 +178,7 @@ export function ProjectSection({
             {sortedIssues.length === 0 ? (
               <tr>
                 <td
-                  colSpan={6}
+                  colSpan={COLUMNS.length}
                   className="px-4 py-8 text-center text-sm text-gray-400"
                 >
                   No matching issues
@@ -213,6 +229,9 @@ export function ProjectSection({
                         statusColorMap.get(issue.status) ?? issue.statusColor
                       }
                     />
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-700">
+                    {issue.milestones.join(", ")}
                   </td>
                   <td
                     className="px-4 py-3 text-sm text-gray-500"

@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import type { Assignee, IssueWithProject } from "@/types";
 
-type SortKey = "id" | "title" | "project" | "issueType" | "status" | "remarks";
+type SortKey = "id" | "title" | "project" | "issueType" | "status" | "milestone" | "remarks";
 type SortDirection = "asc" | "desc";
 
 type ColumnDef = {
@@ -25,6 +25,7 @@ const COLUMNS: readonly ColumnDef[] = [
   { key: "id", label: "キー", width: "w-[250px]" },
   { key: "title", label: "件名", width: "w-[500px]" },
   { key: "status", label: "状態", width: "w-[130px]" },
+  { key: "milestone", label: "マイルストーン", width: "w-[180px]" },
   { key: "remarks", label: "備考", width: "w-[300px]" },
 ] as const;
 
@@ -77,6 +78,8 @@ export function AssigneeSection({
       switch (sortKey) {
         case "project":
           return issue.projectName;
+        case "milestone":
+          return issue.milestones.join(", ");
         case "id":
         case "title":
         case "issueType":
@@ -190,6 +193,9 @@ export function AssigneeSection({
                         statusColorMap.get(issue.status) ?? issue.statusColor
                       }
                     />
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-700">
+                    {issue.milestones.join(", ")}
                   </td>
                   <td
                     className="px-4 py-3 text-sm text-gray-500"

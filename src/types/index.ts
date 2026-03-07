@@ -20,6 +20,7 @@ export type Issue = {
   statusColor: string;
   issueType: string;
   issueTypeColor: string;
+  milestones: string[];
   priority: string;
   remarks: string;
   url: string;
@@ -50,6 +51,12 @@ export type Project = {
   name: string;
   issues: Issue[];
   settings: ProjectSettings;
+};
+
+export type ProjectFilters = {
+  assignees: Set<string>;
+  issueTypes: Set<string>;
+  milestones: Set<string>;
 };
 
 export type IssueWithProject = Issue & {

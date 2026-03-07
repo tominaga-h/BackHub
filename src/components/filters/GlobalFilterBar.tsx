@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { SlidersHorizontal, User } from "lucide-react";
+import { ArrowUp, SlidersHorizontal, User } from "lucide-react";
 import type { Assignee } from "@/types";
 
 export type StatusOption = {
@@ -59,6 +59,13 @@ export function GlobalFilterBar({
         <span className="text-sm font-semibold tracking-wide text-gray-700">
           Filters
         </span>
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          className="ml-auto inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+        >
+          <ArrowUp className="h-3.5 w-3.5" />
+          TOPへ戻る
+        </button>
       </div>
       <div className="px-6 pb-3">
         <div className="flex flex-col gap-y-2">

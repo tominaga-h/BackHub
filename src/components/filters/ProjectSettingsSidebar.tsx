@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Settings } from "lucide-react";
 import {
   Sheet,
@@ -10,33 +10,53 @@ import {
 } from "@/components/ui/sheet";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import type { ProjectSettings } from "@/types";
+import type { ProjectFilters, ProjectSettings } from "@/types";
 
 type ProjectSettingsSidebarProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  projectName?: string;
   settings: ProjectSettings | null;
+  currentFilters?: ProjectFilters;
+  onApply?: (filters: ProjectFilters) => void;
 };
 
 export function ProjectSettingsSidebar({
   open,
   onOpenChange,
+  projectName,
   settings,
+  currentFilters,
+  onApply,
 }: ProjectSettingsSidebarProps) {
   const [selectedAssignees, setSelectedAssignees] = useState<Set<string>>(
-    () => new Set(settings?.assignees.slice(0, 2).map((a) => a.name) ?? [])
+    new Set(),
   );
-  const [selectedTypes, setSelectedTypes] = useState<Set<string>>(
-    () => new Set(settings?.issueTypes.slice(0, 2).map((t) => t.name) ?? [])
-  );
+  const [selectedTypes, setSelectedTypes] = useState<Set<string>>(new Set());
   const [selectedMilestones, setSelectedMilestones] = useState<Set<string>>(
-    () => new Set(settings?.milestones.slice(0, 1).map((m) => m.name) ?? [])
+    new Set(),
   );
 
+  useEffect(() => {
+    if (!open) return;
+    if (currentFilters) {
+      setSelectedAssignees(new Set(currentFilters.assignees));
+      setSelectedTypes(new Set(currentFilters.issueTypes));
+      setSelectedMilestones(new Set(currentFilters.milestones));
+    } else if (settings) {
+      setSelectedAssignees(
+        new Set(settings.assignees.map((a) => a.name)),
+      );
+      setSelectedTypes(new Set(settings.issueTypes.map((t) => t.name)));
+      setSelectedMilestones(
+        new Set(settings.milestones.map((m) => m.name)),
+      );
+    }
+  }, [open, currentFilters, settings]);
+
   const toggle = (
-    set: Set<string>,
     setter: React.Dispatch<React.SetStateAction<Set<string>>>,
-    value: string
+    value: string,
   ) => {
     setter((prev) => {
       const next = new Set(prev);
@@ -49,11 +69,23 @@ export function ProjectSettingsSidebar({
     });
   };
 
+  const handleApply = () => {
+    onApply?.({
+      assignees: new Set(selectedAssignees),
+      issueTypes: new Set(selectedTypes),
+      milestones: new Set(selectedMilestones),
+    });
+    onOpenChange(false);
+  };
+
   if (!settings) return null;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent data-component="ProjectSettingsSidebar" className="w-[300px] overflow-y-auto sm:w-[300px] p-5">
+      <SheetContent
+        data-component="ProjectSettingsSidebar"
+        className="w-[300px] overflow-y-auto sm:w-[300px] p-5"
+      >
         <SheetHeader className="p-0">
           <SheetTitle className="flex items-center gap-2 text-base">
             <Settings className="h-5 w-5 text-gray-500" />
@@ -61,7 +93,11 @@ export function ProjectSettingsSidebar({
           </SheetTitle>
         </SheetHeader>
 
-        <div className="mt-6 space-y-6">
+        {projectName && (
+          <p className="mt-4 text-sm font-bold text-gray-800">{projectName}</p>
+        )}
+
+        <div className="mt-4 space-y-6">
           {/* Assignees */}
           <div>
             <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-orange-600">
@@ -76,10 +112,12 @@ export function ProjectSettingsSidebar({
                   <Checkbox
                     checked={selectedAssignees.has(assignee.name)}
                     onCheckedChange={() =>
-                      toggle(selectedAssignees, setSelectedAssignees, assignee.name)
+                      toggle(setSelectedAssignees, assignee.name)
                     }
                   />
-                  <span className="text-sm text-gray-700">{assignee.name}</span>
+                  <span className="text-sm text-gray-700">
+                    {assignee.name}
+                  </span>
                 </label>
               ))}
             </div>
@@ -99,7 +137,7 @@ export function ProjectSettingsSidebar({
                   <Checkbox
                     checked={selectedTypes.has(type.name)}
                     onCheckedChange={() =>
-                      toggle(selectedTypes, setSelectedTypes, type.name)
+                      toggle(setSelectedTypes, type.name)
                     }
                   />
                   <span
@@ -126,11 +164,7 @@ export function ProjectSettingsSidebar({
                   <Checkbox
                     checked={selectedMilestones.has(milestone.name)}
                     onCheckedChange={() =>
-                      toggle(
-                        selectedMilestones,
-                        setSelectedMilestones,
-                        milestone.name
-                      )
+                      toggle(setSelectedMilestones, milestone.name)
                     }
                   />
                   <span className="text-sm text-gray-700">
@@ -146,7 +180,7 @@ export function ProjectSettingsSidebar({
         <div className="mt-8">
           <Button
             className="w-full bg-backhub text-white hover:bg-backhub-hover p-5 font-bold"
-            onClick={() => onOpenChange(false)}
+            onClick={handleApply}
           >
             Update Filters
           </Button>

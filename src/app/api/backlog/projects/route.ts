@@ -121,6 +121,7 @@ async function fetchProjectData(
     statusColor: issue.status.color,
     issueType: issue.issueType.name,
     issueTypeColor: issue.issueType.color,
+    milestones: (issue.milestone ?? []).map((m: { name: string }) => m.name),
     priority: issue.priority.name,
     remarks: "",
     url: `https://${host}/view/${issue.issueKey}`,
