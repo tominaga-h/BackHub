@@ -51,6 +51,7 @@ export type Project = {
   id: string;
   projectKey: string;
   name: string;
+  icon?: string;
   issues: Issue[];
   settings: ProjectSettings;
 };

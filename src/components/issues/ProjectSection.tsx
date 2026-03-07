@@ -141,7 +141,15 @@ export function ProjectSection({
       {/* Project Header */}
       <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-4 py-3">
         <div className="flex items-center gap-2">
-          <LayoutGrid className="h-5 w-5 text-gray-500" />
+          {project.icon ? (
+            <img
+              src={project.icon}
+              alt={project.name}
+              className="h-5 w-5 rounded object-cover"
+            />
+          ) : (
+            <LayoutGrid className="h-5 w-5 text-gray-500" />
+          )}
           <h2 className="text-base font-bold text-gray-800">{project.name}</h2>
           <span className="inline-block text-sm text-gray-400 border rounded-lg border-gray-200 px-2 py-1">{filteredIssues.length} {filteredIssues.length > 2 ? "issues" : "issue"}</span>
         </div>

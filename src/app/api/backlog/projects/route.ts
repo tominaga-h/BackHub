@@ -78,15 +78,33 @@ function applyIcons(projects: Project[], iconMap: Map<number, string>) {
   }
 }
 
+async function fetchProjectIcon(
+  host: string,
+  apiKey: string,
+  projectIdOrKey: string | number,
+): Promise<string | undefined> {
+  try {
+    const url = `https://${host}/api/v2/projects/${projectIdOrKey}/image?apiKey=${apiKey}`;
+    const res = await fetch(url);
+    if (!res.ok) return undefined;
+    const contentType = res.headers.get("content-type") ?? "image/png";
+    const buf = Buffer.from(await res.arrayBuffer());
+    return `data:${contentType};base64,${buf.toString("base64")}`;
+  } catch {
+    return undefined;
+  }
+}
+
 async function fetchProjectData(
   backlog: ReturnType<typeof createBacklogClient>,
   host: string,
+  apiKey: string,
   projectKey: string,
   createdSince: string,
 ): Promise<Project> {
   const projectInfo = await backlog.getProject(projectKey);
 
-  const [statuses, issueTypes, versions, users, issues] = await Promise.all([
+  const [statuses, issueTypes, versions, users, issues, icon] = await Promise.all([
     backlog.getProjectStatuses(projectKey),
     backlog.getIssueTypes(projectKey),
     backlog.getVersions(projectKey),
@@ -98,6 +116,7 @@ async function fetchProjectData(
       order: "desc",
       createdSince,
     }),
+    fetchProjectIcon(host, apiKey, projectKey),
   ]);
 
   const assigneeMap = new Map<number, Assignee>();
@@ -133,6 +152,7 @@ async function fetchProjectData(
     id: String(projectInfo.id),
     projectKey: projectInfo.projectKey,
     name: projectInfo.name,
+    icon,
     issues: mappedIssues,
     settings: {
       statuses: mappedStatuses,
@@ -165,7 +185,7 @@ export async function GET() {
 
     const results = await Promise.allSettled(
       projectKeys.map((key) =>
-        fetchProjectData(backlog, host, key, createdSince),
+        fetchProjectData(backlog, host, apiKey, key, createdSince),
       ),
     );
 
