@@ -1,40 +1,30 @@
 "use client";
 
 import { useMemo, useState, useCallback } from "react";
-import { Settings, Download, ArrowUpDown, ArrowUp, ArrowDown, LayoutGrid } from "lucide-react";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  Settings,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  LayoutGrid,
+} from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import type { Project, Issue, IssueStatus } from "@/types";
+import type { Project, Issue } from "@/types";
 
 type SortKey = "id" | "title" | "assignee" | "status" | "remarks";
 type SortDirection = "asc" | "desc";
 
-const STATUS_LABEL_TO_DATA: Record<string, IssueStatus> = {
-  Open: "OPEN",
-  "In Progress": "IN PROGRESS",
-  Closed: "CLOSED",
-};
-
-function StatusBadge({ status }: { status: IssueStatus }) {
-  const styles: Record<IssueStatus, string> = {
-    OPEN: "border-green-500 bg-green-50 text-green-700",
-    "IN PROGRESS": "border-orange-500 bg-orange-50 text-orange-700",
-    CLOSED: "border-gray-400 bg-gray-50 text-gray-600",
-  };
-
+function StatusBadge({ name, color }: { name: string; color: string }) {
   return (
     <span
       data-component="StatusBadge"
-      className={`inline-block whitespace-nowrap rounded border px-2 py-0.5 text-xs font-semibold uppercase ${styles[status]}`}
+      className="inline-flex items-center gap-1.5 whitespace-nowrap rounded border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs font-semibold text-gray-700"
     >
-      {status}
+      <span
+        className="h-2 w-2 shrink-0 rounded-full"
+        style={{ backgroundColor: color }}
+      />
+      {name}
     </span>
   );
 }
@@ -53,20 +43,20 @@ export function ProjectSection({
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
-  const handleSort = useCallback((key: SortKey) => {
-    if (sortKey === key) {
-      setSortDirection((d) => (d === "asc" ? "desc" : "asc"));
-    } else {
-      setSortKey(key);
-      setSortDirection("asc");
-    }
-  }, [sortKey]);
+  const handleSort = useCallback(
+    (key: SortKey) => {
+      if (sortKey === key) {
+        setSortDirection((d) => (d === "asc" ? "desc" : "asc"));
+      } else {
+        setSortKey(key);
+        setSortDirection("asc");
+      }
+    },
+    [sortKey],
+  );
 
   const filteredIssues = useMemo(() => {
-    const dataStatuses = new Set(
-      [...activeStatuses].map((s) => STATUS_LABEL_TO_DATA[s]).filter(Boolean)
-    );
-    return project.issues.filter((issue) => dataStatuses.has(issue.status));
+    return project.issues.filter((issue) => activeStatuses.has(issue.status));
   }, [project.issues, activeStatuses]);
 
   const sortedIssues = useMemo(() => {
@@ -75,9 +65,14 @@ export function ProjectSection({
     const getValue = (issue: Issue): string => {
       switch (sortKey) {
         case "assignee":
-          return issue.assignee.name;
-        default:
+          return issue.assignee?.name ?? "";
+        case "id":
+        case "title":
+        case "status":
+        case "remarks":
           return issue[sortKey];
+        default:
+          return "";
       }
     };
 
@@ -89,15 +84,23 @@ export function ProjectSection({
     });
   }, [filteredIssues, sortKey, sortDirection]);
 
+  const statusColorMap = useMemo(() => {
+    const map = new Map<string, string>();
+    project.settings.statuses.forEach((s) => map.set(s.name, s.color));
+    return map;
+  }, [project.settings.statuses]);
+
   return (
-    <div data-component="ProjectSection" id={`project-${project.name.toLowerCase().replace(/\s+/g, '-')}`} className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+    <div
+      data-component="ProjectSection"
+      id={`project-${project.name.toLowerCase().replace(/\s+/g, "-")}`}
+      className="overflow-hidden rounded-lg border border-gray-200 bg-white"
+    >
       {/* Project Header */}
       <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-4 py-3">
         <div className="flex items-center gap-2">
           <LayoutGrid className="h-5 w-5 text-gray-500" />
-          <h2 className="text-base font-bold text-gray-800">
-            {project.name}
-          </h2>
+          <h2 className="text-base font-bold text-gray-800">{project.name}</h2>
         </div>
         <div className="flex items-center gap-2.5">
           <button
@@ -114,16 +117,34 @@ export function ProjectSection({
         <table className="w-full min-w-[900px]">
           <thead>
             <tr className="border-b border-gray-200">
-              {([
-                { key: "id" as SortKey, label: "ID", width: "w-[80px]" },
+              {[
+                {
+                  key: "id" as SortKey,
+                  label: "ID",
+                  width: "w-[200px]",
+                },
                 { key: "title" as SortKey, label: "Issue Title", width: "" },
-                { key: "assignee" as SortKey, label: "Assignee", width: "w-[150px]" },
-                { key: "status" as SortKey, label: "Status", width: "w-[120px]" },
-                { key: "remarks" as SortKey, label: "Remarks", width: "w-[220px]" },
-              ]).map((col) => {
+                {
+                  key: "assignee" as SortKey,
+                  label: "Assignee",
+                  width: "w-[150px]",
+                },
+                {
+                  key: "status" as SortKey,
+                  label: "Status",
+                  width: "w-[140px]",
+                },
+                {
+                  key: "remarks" as SortKey,
+                  label: "Remarks",
+                  width: "w-[220px]",
+                },
+              ].map((col) => {
                 const isActive = sortKey === col.key;
                 const SortIcon = isActive
-                  ? sortDirection === "asc" ? ArrowUp : ArrowDown
+                  ? sortDirection === "asc"
+                    ? ArrowUp
+                    : ArrowDown
                   : ArrowUpDown;
                 return (
                   <th
@@ -133,7 +154,9 @@ export function ProjectSection({
                   >
                     <div className="flex items-center gap-1">
                       {col.label}
-                      <SortIcon className={`h-3.5 w-3.5 ${isActive ? "text-gray-700" : "text-gray-400"}`} />
+                      <SortIcon
+                        className={`h-3.5 w-3.5 ${isActive ? "text-gray-700" : "text-gray-400"}`}
+                      />
                     </div>
                   </th>
                 );
@@ -143,7 +166,10 @@ export function ProjectSection({
           <tbody>
             {sortedIssues.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-sm text-gray-400">
+                <td
+                  colSpan={5}
+                  className="px-4 py-8 text-center text-sm text-gray-400"
+                >
                   No matching issues
                 </td>
               </tr>
@@ -152,7 +178,7 @@ export function ProjectSection({
                 <tr
                   key={issue.id}
                   className="cursor-pointer border-b border-gray-100 last:border-b-0 hover:bg-gray-50"
-                  onClick={() => window.open("#", "_blank")}
+                  onClick={() => window.open(issue.url, "_blank")}
                 >
                   <td className="px-4 py-3 text-sm font-medium text-gray-600">
                     {issue.id}
@@ -161,21 +187,30 @@ export function ProjectSection({
                     {issue.title}
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <Avatar className="h-7 w-7 shrink-0">
-                        <AvatarFallback
-                          className={`text-xs font-medium ${issue.assignee.avatarColor}`}
-                        >
-                          {issue.assignee.initials}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="truncate text-sm text-gray-700">
-                        {issue.assignee.name}
-                      </span>
-                    </div>
+                    {issue.assignee ? (
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-7 w-7 shrink-0">
+                          <AvatarFallback
+                            className={`text-xs font-medium ${issue.assignee.avatarColor}`}
+                          >
+                            {issue.assignee.initials}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="truncate text-sm text-gray-700">
+                          {issue.assignee.name}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-sm text-gray-400">Unassigned</span>
+                    )}
                   </td>
                   <td className="px-4 py-3">
-                    <StatusBadge status={issue.status} />
+                    <StatusBadge
+                      name={issue.status}
+                      color={
+                        statusColorMap.get(issue.status) ?? issue.statusColor
+                      }
+                    />
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-500">
                     {issue.remarks}

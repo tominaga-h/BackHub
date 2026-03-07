@@ -1,6 +1,11 @@
-export type IssueStatus = "OPEN" | "IN PROGRESS" | "CLOSED";
+export type Status = {
+  id: number;
+  name: string;
+  color: string;
+};
 
 export type Assignee = {
+  id: number;
   name: string;
   initials: string;
   avatarColor: string;
@@ -9,21 +14,28 @@ export type Assignee = {
 export type Issue = {
   id: string;
   title: string;
-  assignee: Assignee;
-  status: IssueStatus;
+  assignee: Assignee | null;
+  status: string;
+  statusColor: string;
+  priority: string;
   remarks: string;
+  url: string;
 };
 
 export type IssueType = {
+  id: number;
   name: string;
   color: string;
 };
 
 export type Milestone = {
+  id: number;
   name: string;
+  archived: boolean;
 };
 
 export type ProjectSettings = {
+  statuses: Status[];
   assignees: Assignee[];
   issueTypes: IssueType[];
   milestones: Milestone[];
@@ -31,6 +43,7 @@ export type ProjectSettings = {
 
 export type Project = {
   id: string;
+  projectKey: string;
   name: string;
   issues: Issue[];
   settings: ProjectSettings;
