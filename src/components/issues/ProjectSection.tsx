@@ -38,7 +38,7 @@ export function ProjectSection({
   onOpenSettings,
 }: ProjectSectionProps) {
   return (
-    <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+    <div id={`project-${project.name.toLowerCase().replace(/\s+/g, '-')}`} className="overflow-hidden rounded-lg border border-gray-200 bg-white">
       {/* Project Header */}
       <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-4 py-3">
         <div className="flex items-center gap-2">

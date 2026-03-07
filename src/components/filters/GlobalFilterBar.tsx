@@ -9,9 +9,10 @@ const STATUS_OPTIONS = ["Open", "In Progress", "Closed"] as const;
 
 type GlobalFilterBarProps = {
   projectNames: string[];
+  onProjectSelect?: (projectName: string | null) => void;
 };
 
-export function GlobalFilterBar({ projectNames }: GlobalFilterBarProps) {
+export function GlobalFilterBar({ projectNames, onProjectSelect }: GlobalFilterBarProps) {
   const [activeProject, setActiveProject] = useState("All Projects");
   const [activeStatuses, setActiveStatuses] = useState<Set<string>>(
     new Set(["Open", "In Progress"])
@@ -42,7 +43,10 @@ export function GlobalFilterBar({ projectNames }: GlobalFilterBarProps) {
           {tabs.map((tab) => (
             <button
               key={tab}
-              onClick={() => setActiveProject(tab)}
+              onClick={() => {
+                setActiveProject(tab);
+                onProjectSelect?.(tab === "All Projects" ? null : tab);
+              }}
               className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
                 activeProject === tab
                   ? "bg-backhub text-white"

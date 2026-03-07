@@ -20,6 +20,12 @@ export default function Home() {
     0
   );
 
+  const handleProjectSelect = (projectName: string | null) => {
+    if (!projectName) return;
+    const id = `project-${projectName.toLowerCase().replace(/\s+/g, '-')}`;
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   const handleOpenSettings = (projectId: string) => {
     setActiveProjectId(projectId);
     setSidebarOpen(true);
@@ -28,7 +34,7 @@ export default function Home() {
   return (
     <div className="flex min-h-screen flex-col bg-[#f5f7f9]">
       <Header />
-      <GlobalFilterBar projectNames={mockProjects.map((p) => p.name)} />
+      <GlobalFilterBar projectNames={mockProjects.map((p) => p.name)} onProjectSelect={handleProjectSelect} />
 
       <main className="flex-1 px-6 pb-6">
         <div className="space-y-6">

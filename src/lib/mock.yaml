@@ -26,6 +26,11 @@ projects:
         assignee: *sam
         status: "IN PROGRESS"
         remarks: "Working on JWT logic and refresh tokens"
+      - id: "ISSUE-103"
+        title: "API Integration - Auth Module: Implement OAuth2 with multi-factor authentication and role-based access control"
+        assignee: *sam
+        status: "CLOSED"
+        remarks: "Working on JWT logic and refresh tokens"
     settings:
       assignees: [*alex, *sam, *jordan]
       issueTypes:
