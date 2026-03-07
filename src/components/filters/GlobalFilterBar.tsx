@@ -7,6 +7,25 @@ import { Button } from "@/components/ui/button";
 
 export const STATUS_OPTIONS = ["Open", "In Progress", "Closed"] as const;
 
+const STATUS_PRESETS = [
+  {
+    label: "All",
+    statuses: [...STATUS_OPTIONS],
+    isActive: (active: Set<string>) =>
+      STATUS_OPTIONS.every((s) => active.has(s)),
+    activeClass: "bg-blue-600 text-white",
+    inactiveClass: "bg-blue-50 text-blue-700 hover:bg-blue-100",
+  },
+  {
+    label: "Not Completed",
+    statuses: STATUS_OPTIONS.filter((s) => s !== "Closed") as string[],
+    isActive: (active: Set<string>) =>
+      active.has("Open") && active.has("In Progress") && !active.has("Closed"),
+    activeClass: "bg-orange-500 text-white",
+    inactiveClass: "bg-orange-50 text-orange-700 hover:bg-orange-100",
+  },
+] as const;
+
 type GlobalFilterBarProps = {
   projectNames: string[];
   onProjectSelect?: (projectName: string | null) => void;
@@ -65,6 +84,27 @@ export function GlobalFilterBar({
           <span className="mr-1 text-xs font-medium uppercase tracking-wider text-gray-500">
             Status
           </span>
+
+          {/* Preset Buttons */}
+          <div className="flex items-center gap-1.5">
+            {STATUS_PRESETS.map((preset) => {
+              const active = preset.isActive(activeStatuses);
+              return (
+                <button
+                  key={preset.label}
+                  onClick={() => onStatusChange(new Set(preset.statuses))}
+                  className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-colors ${
+                    active ? preset.activeClass : preset.inactiveClass
+                  }`}
+                >
+                  {preset.label}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mx-1 h-4 w-px bg-gray-200" />
+
           {STATUS_OPTIONS.map((status) => (
             <label
               key={status}
