@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
-import { Settings, Download, ArrowUpDown, LayoutGrid } from "lucide-react";
+import { useMemo, useState, useCallback } from "react";
+import { Settings, Download, ArrowUpDown, ArrowUp, ArrowDown, LayoutGrid } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -11,7 +11,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import type { Project, IssueStatus } from "@/types";
+import type { Project, Issue, IssueStatus } from "@/types";
+
+type SortKey = "id" | "title" | "assignee" | "status" | "remarks";
+type SortDirection = "asc" | "desc";
 
 const STATUS_LABEL_TO_DATA: Record<string, IssueStatus> = {
   Open: "OPEN",
@@ -47,12 +50,44 @@ export function ProjectSection({
   onOpenSettings,
   activeStatuses,
 }: ProjectSectionProps) {
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+
+  const handleSort = useCallback((key: SortKey) => {
+    if (sortKey === key) {
+      setSortDirection((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDirection("asc");
+    }
+  }, [sortKey]);
+
   const filteredIssues = useMemo(() => {
     const dataStatuses = new Set(
       [...activeStatuses].map((s) => STATUS_LABEL_TO_DATA[s]).filter(Boolean)
     );
     return project.issues.filter((issue) => dataStatuses.has(issue.status));
   }, [project.issues, activeStatuses]);
+
+  const sortedIssues = useMemo(() => {
+    if (!sortKey) return filteredIssues;
+
+    const getValue = (issue: Issue): string => {
+      switch (sortKey) {
+        case "assignee":
+          return issue.assignee.name;
+        default:
+          return issue[sortKey];
+      }
+    };
+
+    return [...filteredIssues].sort((a, b) => {
+      const aVal = getValue(a);
+      const bVal = getValue(b);
+      const cmp = aVal.localeCompare(bVal, "ja");
+      return sortDirection === "asc" ? cmp : -cmp;
+    });
+  }, [filteredIssues, sortKey, sortDirection]);
 
   return (
     <div data-component="ProjectSection" id={`project-${project.name.toLowerCase().replace(/\s+/g, '-')}`} className="overflow-hidden rounded-lg border border-gray-200 bg-white">
@@ -74,9 +109,6 @@ export function ProjectSection({
           <button className="text-gray-400 hover:text-gray-600">
             <Download className="h-5 w-5" />
           </button>
-          <button className="text-gray-400 hover:text-gray-600">
-            <ArrowUpDown className="h-5 w-5" />
-          </button>
         </div>
       </div>
 
@@ -85,32 +117,41 @@ export function ProjectSection({
         <table className="w-full min-w-[900px]">
           <thead>
             <tr className="border-b border-gray-200">
-              <th className="w-[80px] px-4 py-2.5 text-left text-xs font-semibold uppercase text-gray-500">
-                ID
-              </th>
-              <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase text-gray-500">
-                Issue Title
-              </th>
-              <th className="w-[150px] px-4 py-2.5 text-left text-xs font-semibold uppercase text-gray-500">
-                Assignee
-              </th>
-              <th className="w-[120px] px-4 py-2.5 text-left text-xs font-semibold uppercase text-gray-500">
-                Status
-              </th>
-              <th className="w-[220px] px-4 py-2.5 text-left text-xs font-semibold uppercase text-gray-500">
-                Remarks
-              </th>
+              {([
+                { key: "id" as SortKey, label: "ID", width: "w-[80px]" },
+                { key: "title" as SortKey, label: "Issue Title", width: "" },
+                { key: "assignee" as SortKey, label: "Assignee", width: "w-[150px]" },
+                { key: "status" as SortKey, label: "Status", width: "w-[120px]" },
+                { key: "remarks" as SortKey, label: "Remarks", width: "w-[220px]" },
+              ]).map((col) => {
+                const isActive = sortKey === col.key;
+                const SortIcon = isActive
+                  ? sortDirection === "asc" ? ArrowUp : ArrowDown
+                  : ArrowUpDown;
+                return (
+                  <th
+                    key={col.key}
+                    className={`${col.width} cursor-pointer select-none px-4 py-2.5 text-left text-xs font-semibold uppercase text-gray-500 hover:text-gray-700`}
+                    onClick={() => handleSort(col.key)}
+                  >
+                    <div className="flex items-center gap-1">
+                      {col.label}
+                      <SortIcon className={`h-3.5 w-3.5 ${isActive ? "text-gray-700" : "text-gray-400"}`} />
+                    </div>
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody>
-            {filteredIssues.length === 0 ? (
+            {sortedIssues.length === 0 ? (
               <tr>
                 <td colSpan={5} className="px-4 py-8 text-center text-sm text-gray-400">
                   No matching issues
                 </td>
               </tr>
             ) : (
-              filteredIssues.map((issue) => (
+              sortedIssues.map((issue) => (
                 <tr
                   key={issue.id}
                   className="cursor-pointer border-b border-gray-100 last:border-b-0 hover:bg-gray-50"
