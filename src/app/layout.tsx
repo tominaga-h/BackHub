@@ -21,7 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja">
-      <body className={`${inter.variable} font-sans antialiased`}>
+      <body data-component="RootLayout" className={`${inter.variable} font-sans antialiased`}>
         <TooltipProvider>{children}</TooltipProvider>
       </body>
     </html>

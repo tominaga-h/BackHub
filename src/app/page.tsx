@@ -57,7 +57,7 @@ export default function Home() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#f5f7f9]">
+    <div data-component="Home" className="flex min-h-screen flex-col bg-[#f5f7f9]">
       <Header />
       <GlobalFilterBar
         projectNames={mockProjects.map((p) => p.name)}

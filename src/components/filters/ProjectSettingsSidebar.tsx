@@ -53,7 +53,7 @@ export function ProjectSettingsSidebar({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-[300px] overflow-y-auto sm:w-[300px] p-5">
+      <SheetContent data-component="ProjectSettingsSidebar" className="w-[300px] overflow-y-auto sm:w-[300px] p-5">
         <SheetHeader className="p-0">
           <SheetTitle className="flex items-center gap-2 text-base">
             <Settings className="h-5 w-5 text-gray-500" />

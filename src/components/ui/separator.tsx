@@ -11,6 +11,7 @@ function Separator({
 }: SeparatorPrimitive.Props) {
   return (
     <SeparatorPrimitive
+      data-component="Separator"
       data-slot="separator"
       orientation={orientation}
       className={cn(

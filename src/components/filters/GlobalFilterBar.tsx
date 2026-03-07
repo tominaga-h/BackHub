@@ -35,7 +35,7 @@ export function GlobalFilterBar({
   const tabs = ["All Projects", ...projectNames];
 
   return (
-    <div className="flex items-center justify-between px-6 py-3">
+    <div data-component="GlobalFilterBar" className="flex items-center justify-between px-6 py-3">
       <div className="flex items-center gap-6">
         {/* Project Tabs */}
         <div className="flex items-center gap-1">

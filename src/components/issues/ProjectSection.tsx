@@ -28,6 +28,7 @@ function StatusBadge({ status }: { status: IssueStatus }) {
 
   return (
     <span
+      data-component="StatusBadge"
       className={`inline-block whitespace-nowrap rounded border px-2 py-0.5 text-xs font-semibold uppercase ${styles[status]}`}
     >
       {status}
@@ -54,7 +55,7 @@ export function ProjectSection({
   }, [project.issues, activeStatuses]);
 
   return (
-    <div id={`project-${project.name.toLowerCase().replace(/\s+/g, '-')}`} className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+    <div data-component="ProjectSection" id={`project-${project.name.toLowerCase().replace(/\s+/g, '-')}`} className="overflow-hidden rounded-lg border border-gray-200 bg-white">
       {/* Project Header */}
       <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-4 py-3">
         <div className="flex items-center gap-2">

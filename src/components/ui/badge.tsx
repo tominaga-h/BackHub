@@ -37,6 +37,7 @@ function Badge({
     defaultTagName: "span",
     props: mergeProps<"span">(
       {
+        "data-component": "Badge",
         className: cn(badgeVariants({ variant }), className),
       },
       props
