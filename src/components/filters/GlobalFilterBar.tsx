@@ -54,12 +54,12 @@ export function GlobalFilterBar({
 
   return (
     <div data-component="GlobalFilterBar" className="sticky top-0 z-30 m-4 my-3 p-3 rounded-xl bg-white shadow-md">
-      <div className="mb-2 flex items-center gap-2 border-b border-gray-100 px-1 pb-2">
+      <div className="mb-2 flex items-center gap-2 border-b border-gray-200 px-1 pb-2">
         <SlidersHorizontal className="h-4 w-4 text-backhub" />
         <span className="text-sm font-semibold tracking-wide text-gray-700">Filters</span>
       </div>
-      <div className="flex flex-wrap items-center gap-y-3 px-6 pb-3">
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+      <div className="px-6 pb-3">
+        <div className="flex flex-col gap-y-2">
           {/* Project Tabs */}
           <div className="flex items-center gap-1">
             <span className="mr-2 text-xs font-medium uppercase tracking-wider text-gray-500">
