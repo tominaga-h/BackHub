@@ -53,15 +53,15 @@ export function ProjectSettingsSidebar({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-[300px] overflow-y-auto sm:w-[300px]">
-        <SheetHeader>
+      <SheetContent className="w-[300px] overflow-y-auto sm:w-[300px] p-5">
+        <SheetHeader className="p-0">
           <SheetTitle className="flex items-center gap-2 text-base">
             <Settings className="h-5 w-5 text-gray-500" />
             Project Settings
           </SheetTitle>
         </SheetHeader>
 
-        <div className="mt-6 space-y-6 px-1">
+        <div className="mt-6 space-y-6">
           {/* Assignees */}
           <div>
             <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-orange-600">
@@ -143,9 +143,9 @@ export function ProjectSettingsSidebar({
         </div>
 
         {/* Update Filters Button */}
-        <div className="mt-8 px-1">
+        <div className="mt-8">
           <Button
-            className="w-full bg-backhub text-white hover:bg-backhub-hover"
+            className="w-full bg-backhub text-white hover:bg-backhub-hover p-5 font-bold"
             onClick={() => onOpenChange(false)}
           >
             Update Filters
