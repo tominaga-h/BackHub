@@ -38,12 +38,12 @@ export function Header() {
         <button className="text-gray-500 hover:text-gray-700">
           <Settings className="h-5 w-5" />
         </button>
-        <div className="flex items-center gap-2 pl-2">
+        <div className="h-6 w-px bg-gray-200" />
+        <div className="flex items-center gap-2">
           <div className="text-right">
             <p className="text-sm font-medium leading-tight text-gray-800">
               John Doe
             </p>
-            <p className="text-xs leading-tight text-gray-500">ADMIN</p>
           </div>
           <Avatar className="h-8 w-8">
             <AvatarFallback className="bg-amber-100 text-sm font-medium text-amber-700">
