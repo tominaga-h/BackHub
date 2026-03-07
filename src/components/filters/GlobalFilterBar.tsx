@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { SlidersHorizontal } from "lucide-react";
-import { Checkbox } from "@/components/ui/checkbox";
 
 export type StatusOption = {
   name: string;
@@ -24,6 +23,7 @@ export function GlobalFilterBar({
   activeStatuses,
   onStatusChange,
 }: GlobalFilterBarProps) {
+  console.log(projectNames, statusOptions, activeStatuses);
   const [activeProject, setActiveProject] = useState("All Projects");
 
   const toggleStatus = (status: string) => {
@@ -75,7 +75,7 @@ export function GlobalFilterBar({
             ))}
           </div>
           {/* Status Filters */}
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="mr-1 text-xs font-medium uppercase tracking-wider text-gray-500">
               Status
             </span>
@@ -83,31 +83,35 @@ export function GlobalFilterBar({
               onClick={() =>
                 onStatusChange(new Set(statusOptions.map((s) => s.name)))
               }
-              className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-colors ${
+              className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
                 allActive
                   ? "bg-blue-600 text-white"
-                  : "bg-blue-50 text-blue-700 hover:bg-blue-100"
+                  : "bg-gray-100 text-gray-500 hover:bg-gray-200"
               }`}
             >
               All
             </button>
-            <div className="mx-1 h-4 w-px bg-gray-200" />
-            {statusOptions.map((status) => (
-              <label
-                key={status.name}
-                className="flex cursor-pointer items-center gap-1.5"
-              >
-                <Checkbox
-                  checked={activeStatuses.has(status.name)}
-                  onCheckedChange={() => toggleStatus(status.name)}
-                />
-                <span
-                  className="h-2.5 w-2.5 shrink-0 rounded-full"
-                  style={{ backgroundColor: status.color }}
-                />
-                <span className="text-sm text-gray-700">{status.name}</span>
-              </label>
-            ))}
+            {statusOptions.map((status) => {
+              const isActive = activeStatuses.has(status.name);
+              return (
+                <button
+                  key={status.name}
+                  onClick={() => toggleStatus(status.name)}
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                    isActive
+                      ? "border-current bg-opacity-15 text-gray-800"
+                      : "border-gray-200 bg-gray-100 text-gray-400"
+                  }`}
+                  style={
+                    isActive
+                      ? { backgroundColor: status.color, color: "white", fontWeight: "bold" }
+                      : undefined
+                  }
+                >
+                  {status.name}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>

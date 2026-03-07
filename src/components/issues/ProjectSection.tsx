@@ -20,12 +20,12 @@ type ColumnDef = {
 };
 
 const COLUMNS: readonly ColumnDef[] = [
-  { key: "issueType", label: "Type", width: "w-[120px]" },
-  { key: "id", label: "ID", width: "w-[300px]" },
-  { key: "title", label: "Issue Title", width: "" },
-  { key: "assignee", label: "Assignee", width: "w-[150px]" },
-  { key: "status", label: "Status", width: "w-[150px]" },
-  { key: "remarks", label: "Remarks", width: "w-[300px]" },
+  { key: "issueType", label: "種別", width: "w-[120px]" },
+  { key: "id", label: "キー", width: "w-[300px]" },
+  { key: "title", label: "件名", width: "" },
+  { key: "assignee", label: "担当者", width: "w-[150px]" },
+  { key: "status", label: "状態", width: "w-[150px]" },
+  { key: "remarks", label: "備考", width: "w-[300px]" },
 ] as const;
 
 function ColorBadge({ name, color }: { name: string; color: string }) {

@@ -25,9 +25,14 @@ export default function Home() {
       .then((data: { projects: Project[]; errors?: string[] }) => {
         setProjects(data.projects);
         const allStatuses = new Set<string>();
+        const closedNames = new Set<string>();
         data.projects.forEach((p) =>
-          p.settings.statuses.forEach((s) => allStatuses.add(s.name)),
+          p.settings.statuses.forEach((s) => {
+            allStatuses.add(s.name);
+            if (s.id === 4) closedNames.add(s.name);
+          }),
         );
+        closedNames.forEach((name) => allStatuses.delete(name));
         setActiveStatuses(allStatuses);
       })
       .catch((err) => setError(err.message))

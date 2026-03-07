@@ -180,16 +180,17 @@ export async function GET() {
       }
     }
 
-    const uniqueUserIds = new Set<number>();
-    for (const p of projects) {
-      for (const a of p.settings.assignees) uniqueUserIds.add(a.id);
-      for (const i of p.issues) {
-        if (i.assignee) uniqueUserIds.add(i.assignee.id);
-      }
-    }
+    // TODO: 429エラー回避のため一時的にアイコン取得を無効化
+    // const uniqueUserIds = new Set<number>();
+    // for (const p of projects) {
+    //   for (const a of p.settings.assignees) uniqueUserIds.add(a.id);
+    //   for (const i of p.issues) {
+    //     if (i.assignee) uniqueUserIds.add(i.assignee.id);
+    //   }
+    // }
 
-    const iconMap = await fetchIconsBatched(host, apiKey, Array.from(uniqueUserIds));
-    applyIcons(projects, iconMap);
+    // const iconMap = await fetchIconsBatched(host, apiKey, Array.from(uniqueUserIds));
+    // applyIcons(projects, iconMap);
 
     return NextResponse.json({ projects, errors });
   } catch (error) {
