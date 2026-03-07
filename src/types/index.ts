@@ -51,3 +51,8 @@ export type Project = {
   issues: Issue[];
   settings: ProjectSettings;
 };
+
+export type IssueWithProject = Issue & {
+  projectName: string;
+  projectKey: string;
+};
