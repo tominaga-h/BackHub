@@ -19,13 +19,14 @@
 - RLS（Row Level Security）の基本設定（今回は社内ツール想定なので緩めでも可）。
 - フロントエンドからSupabaseのモックデータを取得・保存できるかテスト接続。
 
-## フェーズ3: 認証機能の組み込み (Backlog SSO)
+## フェーズ3: 認証機能の組み込み (Google / GitHub OAuth)
 
 **目的**: ユーザーが安全にログインし、個人やプロジェクトに紐づくデータを扱えるようにする。
 
-- Backlog APIのOAuth2アプリケーション登録。
-- NextAuth.js (Auth.js) または Supabase Auth を用いたBacklogログインの実装。
+- Google OAuth2 および GitHub OAuth2 のアプリケーション登録。
+- NextAuth.js (Auth.js) または Supabase Auth を用いたGoogle / GitHubログインの実装。
 - ログイン状態に応じた画面の出し分け（未ログイン時はログイン画面へリダイレクト等）。
+- ログイン後のBacklog APIキー登録画面の実装（ユーザーごとにAPIキーを保存）。
 
 ## フェーズ4: バックエンドBFF構築と初期データ取得
 
