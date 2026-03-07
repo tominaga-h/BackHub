@@ -53,7 +53,6 @@ function ColorBadge({ name, color }: { name: string; color: string }) {
 type ProjectSectionProps = {
   project: Project;
   onOpenSettings: (projectId: string) => void;
-  activeStatuses: Set<string>;
   projectFilters?: ProjectFilters;
   onRemarksChange?: (issueId: string, remarks: string) => void;
 };
@@ -61,7 +60,6 @@ type ProjectSectionProps = {
 export function ProjectSection({
   project,
   onOpenSettings,
-  activeStatuses,
   projectFilters,
   onRemarksChange,
 }: ProjectSectionProps) {
@@ -84,7 +82,6 @@ export function ProjectSection({
 
   const filteredIssues = useMemo(() => {
     return project.issues.filter((issue) => {
-      if (!activeStatuses.has(issue.status)) return false;
       if (!projectFilters) return true;
       const statusMatch = projectFilters.statuses.has(issue.status);
       const assigneeMatch = issue.assignee
@@ -97,7 +94,7 @@ export function ProjectSection({
           : issue.milestones.some((m) => projectFilters.milestones.has(m));
       return statusMatch && assigneeMatch && typeMatch && milestoneMatch;
     });
-  }, [project.issues, activeStatuses, projectFilters]);
+  }, [project.issues, projectFilters]);
 
   const sortedIssues = useMemo(() => {
     if (!sortKey) return filteredIssues;

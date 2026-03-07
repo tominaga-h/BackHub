@@ -52,9 +52,23 @@ export default function ProjectsPage() {
       const next = { ...prev };
       let changed = false;
       for (const p of projects) {
+        const newStatuses = new Set(
+          p.settings.statuses
+            .map((s) => s.name)
+            .filter((name) => activeStatuses.has(name)),
+        );
         if (!next[p.id]) {
           next[p.id] = buildDefaultFilters(p, activeStatuses);
           changed = true;
+        } else {
+          const current = next[p.id].statuses;
+          const isSame =
+            current.size === newStatuses.size &&
+            [...newStatuses].every((s) => current.has(s));
+          if (!isSame) {
+            next[p.id] = { ...next[p.id], statuses: newStatuses };
+            changed = true;
+          }
         }
       }
       return changed ? next : prev;
@@ -74,13 +88,11 @@ export default function ProjectsPage() {
         return (
           sum +
           p.issues.filter(
-            (i) =>
-              activeStatuses.has(i.status) &&
-              (!pf || matchesProjectFilters(i, pf)),
+            (i) => !pf || matchesProjectFilters(i, pf),
           ).length
         );
       }, 0),
-    [projects, activeStatuses, filtersMap],
+    [projects, filtersMap],
   );
 
   const handleOpenSettings = (projectId: string) => {
@@ -109,7 +121,6 @@ export default function ProjectsPage() {
             key={project.id}
             project={project}
             onOpenSettings={handleOpenSettings}
-            activeStatuses={activeStatuses}
             projectFilters={filtersMap[project.id]}
             onRemarksChange={handleRemarksChange}
           />
