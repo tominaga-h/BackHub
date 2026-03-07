@@ -129,7 +129,7 @@ export function AssigneeSection({
             <User className="h-5 w-5 text-gray-500" />
           )}
           <h2 className="text-base font-bold text-gray-800">{assigneeLabel}</h2>
-          <span className="text-sm text-gray-400">({issues.length})</span>
+          <span className="inline-block text-sm text-gray-400 border rounded-lg border-gray-200 px-2 py-1">{issues.length} {issues.length > 2 ? "issues" : "issue"}</span>
         </div>
       </div>
 

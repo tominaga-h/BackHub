@@ -143,7 +143,7 @@ export function ProjectSection({
         <div className="flex items-center gap-2">
           <LayoutGrid className="h-5 w-5 text-gray-500" />
           <h2 className="text-base font-bold text-gray-800">{project.name}</h2>
-          <span className="text-sm text-gray-400">({filteredIssues.length})</span>
+          <span className="inline-block text-sm text-gray-400 border rounded-lg border-gray-200 px-2 py-1">{filteredIssues.length} {filteredIssues.length > 2 ? "issues" : "issue"}</span>
         </div>
         <div className="flex items-center gap-2.5">
           <button
