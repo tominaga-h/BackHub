@@ -143,6 +143,7 @@ export function ProjectSection({
         <div className="flex items-center gap-2">
           <LayoutGrid className="h-5 w-5 text-gray-500" />
           <h2 className="text-base font-bold text-gray-800">{project.name}</h2>
+          <span className="text-sm text-gray-400">({filteredIssues.length})</span>
         </div>
         <div className="flex items-center gap-2.5">
           <button
