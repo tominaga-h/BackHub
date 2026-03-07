@@ -14,7 +14,7 @@ assignees:
 
 projects:
   - id: "project-a"
-    name: "Project A"
+    name: "プロジェクトプロジェクト A"
     issues:
       - id: "ISSUE-101"
         title: "Setup database environment for the upcoming enterprise architecture scaling project"
@@ -46,7 +46,7 @@ projects:
         - name: "Legacy Support"
 
   - id: "project-b"
-    name: "Project B"
+    name: "プロジェクトプロジェクト B"
     issues:
       - id: "ISSUE-201"
         title: "Mobile responsiveness fixes for the main landing page and secondary navigation menus across all breakpoints"
@@ -65,7 +65,7 @@ projects:
         - name: "Q3 Features"
 
   - id: "project-c"
-    name: "Project C"
+    name: "プロジェクトプロジェクト C"
     issues:
       - id: "ISSUE-101"
         title: "Setup database environment for the upcoming enterprise architecture scaling project"
@@ -92,7 +92,7 @@ projects:
         - name: "Legacy Support"
 
   - id: "project-d"
-    name: "Project D"
+    name: "プロジェクトプロジェクト D"
     issues:
       - id: "ISSUE-101"
         title: "Setup database environment for the upcoming enterprise architecture scaling project"

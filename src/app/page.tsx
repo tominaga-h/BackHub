@@ -48,7 +48,13 @@ export default function Home() {
   const handleProjectSelect = (projectName: string | null) => {
     if (!projectName) return;
     const id = `project-${projectName.toLowerCase().replace(/\s+/g, '-')}`;
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const target = document.getElementById(id);
+    if (!target) return;
+
+    const filterBar = document.querySelector<HTMLElement>('[data-component="GlobalFilterBar"]');
+    const offset = filterBar ? filterBar.offsetHeight + 12 : 24;
+    const top = target.getBoundingClientRect().top + window.scrollY - offset;
+    window.scrollTo({ top, behavior: 'smooth' });
   };
 
   const handleOpenSettings = (projectId: string) => {

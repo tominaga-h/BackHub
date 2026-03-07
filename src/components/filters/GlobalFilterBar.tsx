@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { SlidersHorizontal } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Button } from "@/components/ui/button";
 
 export const STATUS_OPTIONS = ["Open", "In Progress", "Closed"] as const;
 
@@ -51,80 +50,76 @@ export function GlobalFilterBar({
     onStatusChange(next);
   };
 
-  const tabs = ["All Projects", ...projectNames];
+  const tabs = [...projectNames];
 
   return (
-    <div data-component="GlobalFilterBar" className="flex items-center justify-between px-6 py-3">
-      <div className="flex items-center gap-6">
-        {/* Project Tabs */}
-        <div className="flex items-center gap-1">
-          <span className="mr-2 text-xs font-medium uppercase tracking-wider text-gray-500">
-            Project
-          </span>
-          {tabs.map((tab) => (
-            <button
-              key={tab}
-              onClick={() => {
-                setActiveProject(tab);
-                onProjectSelect?.(tab === "All Projects" ? null : tab);
-              }}
-              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                activeProject === tab
-                  ? "bg-backhub text-white"
-                  : "text-gray-600 hover:bg-gray-100"
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
-
-        {/* Status Filters */}
-        <div className="flex items-center gap-3 border-l border-gray-200 pl-6">
-          <span className="mr-1 text-xs font-medium uppercase tracking-wider text-gray-500">
-            Status
-          </span>
-
-          {/* Preset Buttons */}
-          <div className="flex items-center gap-1.5">
-            {STATUS_PRESETS.map((preset) => {
-              const active = preset.isActive(activeStatuses);
-              return (
-                <button
-                  key={preset.label}
-                  onClick={() => onStatusChange(new Set(preset.statuses))}
-                  className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-colors ${
-                    active ? preset.activeClass : preset.inactiveClass
-                  }`}
-                >
-                  {preset.label}
-                </button>
-              );
-            })}
+    <div data-component="GlobalFilterBar" className="sticky top-0 z-30 m-4 my-3 p-3 rounded-xl bg-white shadow-md">
+      <div className="mb-2 flex items-center gap-2 border-b border-gray-100 px-1 pb-2">
+        <SlidersHorizontal className="h-4 w-4 text-backhub" />
+        <span className="text-sm font-semibold tracking-wide text-gray-700">Filters</span>
+      </div>
+      <div className="flex flex-wrap items-center gap-y-3 px-6 pb-3">
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+          {/* Project Tabs */}
+          <div className="flex items-center gap-1">
+            <span className="mr-2 text-xs font-medium uppercase tracking-wider text-gray-500">
+              Project
+            </span>
+            {tabs.map((tab) => (
+              <button
+                key={tab}
+                onClick={() => {
+                  setActiveProject(tab);
+                  onProjectSelect?.(tab === "All Projects" ? null : tab);
+                }}
+                className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                  activeProject === tab
+                    ? "bg-backhub text-white"
+                    : "text-gray-600 hover:bg-gray-100"
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
           </div>
-
-          <div className="mx-1 h-4 w-px bg-gray-200" />
-
-          {STATUS_OPTIONS.map((status) => (
-            <label
-              key={status}
-              className="flex cursor-pointer items-center gap-1.5"
-            >
-              <Checkbox
-                checked={activeStatuses.has(status)}
-                onCheckedChange={() => toggleStatus(status)}
-              />
-              <span className="text-sm text-gray-700">{status}</span>
-            </label>
-          ))}
+          {/* Status Filters */}
+          <div className="flex items-center gap-3">
+            <span className="mr-1 text-xs font-medium uppercase tracking-wider text-gray-500">
+              Status
+            </span>
+            {/* Preset Buttons */}
+            <div className="flex items-center gap-1.5">
+              {STATUS_PRESETS.map((preset) => {
+                const active = preset.isActive(activeStatuses);
+                return (
+                  <button
+                    key={preset.label}
+                    onClick={() => onStatusChange(new Set(preset.statuses))}
+                    className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-colors ${
+                      active ? preset.activeClass : preset.inactiveClass
+                    }`}
+                  >
+                    {preset.label}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="mx-1 h-4 w-px bg-gray-200" />
+            {STATUS_OPTIONS.map((status) => (
+              <label
+                key={status}
+                className="flex cursor-pointer items-center gap-1.5"
+              >
+                <Checkbox
+                  checked={activeStatuses.has(status)}
+                  onCheckedChange={() => toggleStatus(status)}
+                />
+                <span className="text-sm text-gray-700">{status}</span>
+              </label>
+            ))}
+          </div>
         </div>
       </div>
-
-      {/* New Issue Button */}
-      <Button className="bg-backhub text-white hover:bg-backhub-hover">
-        <Plus className="mr-1 h-4 w-4" />
-        New Issue
-      </Button>
     </div>
   );
 }
