@@ -25,7 +25,57 @@ function toAssignee(user: { id: number; name: string }): Assignee {
       ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
       : name.slice(0, 2).toUpperCase();
   const avatarColor = AVATAR_COLORS[user.id % AVATAR_COLORS.length];
-  return { id: user.id, name, initials, avatarColor };
+  const avatarUrl = `/api/backlog/users/${user.id}/icon`;
+  return { id: user.id, name, initials, avatarColor, avatarUrl };
+}
+
+async function fetchUserIconAsDataUri(
+  host: string,
+  apiKey: string,
+  userId: number,
+): Promise<{ id: number; dataUri: string }> {
+  const url = `https://${host}/api/v2/users/${userId}/icon?apiKey=${apiKey}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const contentType = res.headers.get("content-type") ?? "image/png";
+  const buf = Buffer.from(await res.arrayBuffer());
+  return { id: userId, dataUri: `data:${contentType};base64,${buf.toString("base64")}` };
+}
+
+async function fetchIconsBatched(
+  host: string,
+  apiKey: string,
+  userIds: number[],
+  concurrency: number = 5,
+): Promise<Map<number, string>> {
+  const iconMap = new Map<number, string>();
+  for (let i = 0; i < userIds.length; i += concurrency) {
+    const batch = userIds.slice(i, i + concurrency);
+    const results = await Promise.allSettled(
+      batch.map((id) => fetchUserIconAsDataUri(host, apiKey, id)),
+    );
+    for (const result of results) {
+      if (result.status === "fulfilled") {
+        iconMap.set(result.value.id, result.value.dataUri);
+      }
+    }
+  }
+  return iconMap;
+}
+
+function applyIcons(projects: Project[], iconMap: Map<number, string>) {
+  for (const project of projects) {
+    for (const issue of project.issues) {
+      if (issue.assignee && iconMap.has(issue.assignee.id)) {
+        issue.assignee.avatarUrl = iconMap.get(issue.assignee.id);
+      }
+    }
+    for (const assignee of project.settings.assignees) {
+      if (iconMap.has(assignee.id)) {
+        assignee.avatarUrl = iconMap.get(assignee.id);
+      }
+    }
+  }
 }
 
 async function fetchProjectData(
@@ -69,6 +119,8 @@ async function fetchProjectData(
       : null,
     status: issue.status.name,
     statusColor: issue.status.color,
+    issueType: issue.issueType.name,
+    issueTypeColor: issue.issueType.color,
     priority: issue.priority.name,
     remarks: "",
     url: `https://${host}/view/${issue.issueKey}`,
@@ -101,6 +153,8 @@ export async function GET() {
     const backlog = createBacklogClient();
     const host = getBacklogHost();
     const projectKeys = getProjectKeys();
+    const apiKey = process.env.BACKLOG_API_KEY;
+    if (!apiKey) throw new Error("BACKLOG_API_KEY must be set");
 
     const since = new Date();
     since.setMonth(since.getMonth() - 3);
@@ -125,6 +179,17 @@ export async function GET() {
         errors.push(`${key}: ${result.reason?.message ?? "Unknown error"}`);
       }
     }
+
+    const uniqueUserIds = new Set<number>();
+    for (const p of projects) {
+      for (const a of p.settings.assignees) uniqueUserIds.add(a.id);
+      for (const i of p.issues) {
+        if (i.assignee) uniqueUserIds.add(i.assignee.id);
+      }
+    }
+
+    const iconMap = await fetchIconsBatched(host, apiKey, Array.from(uniqueUserIds));
+    applyIcons(projects, iconMap);
 
     return NextResponse.json({ projects, errors });
   } catch (error) {

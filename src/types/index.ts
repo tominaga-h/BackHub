@@ -9,6 +9,7 @@ export type Assignee = {
   name: string;
   initials: string;
   avatarColor: string;
+  avatarUrl?: string;
 };
 
 export type Issue = {
@@ -17,6 +18,8 @@ export type Issue = {
   assignee: Assignee | null;
   status: string;
   statusColor: string;
+  issueType: string;
+  issueTypeColor: string;
   priority: string;
   remarks: string;
   url: string;

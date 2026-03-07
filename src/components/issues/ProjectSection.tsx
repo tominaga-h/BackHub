@@ -8,10 +8,9 @@ import {
   ArrowDown,
   LayoutGrid,
 } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import type { Project, Issue } from "@/types";
 
-type SortKey = "id" | "title" | "assignee" | "status" | "remarks";
+type SortKey = "id" | "title" | "assignee" | "issueType" | "status" | "remarks";
 type SortDirection = "asc" | "desc";
 
 type ColumnDef = {
@@ -21,6 +20,7 @@ type ColumnDef = {
 };
 
 const COLUMNS: readonly ColumnDef[] = [
+  { key: "issueType", label: "Type", width: "w-[120px]" },
   { key: "id", label: "ID", width: "w-[300px]" },
   { key: "title", label: "Issue Title", width: "" },
   { key: "assignee", label: "Assignee", width: "w-[150px]" },
@@ -28,16 +28,13 @@ const COLUMNS: readonly ColumnDef[] = [
   { key: "remarks", label: "Remarks", width: "w-[300px]" },
 ] as const;
 
-function StatusBadge({ name, color }: { name: string; color: string }) {
+function ColorBadge({ name, color }: { name: string; color: string }) {
   return (
     <span
-      data-component="StatusBadge"
-      className="inline-flex items-center gap-1.5 whitespace-nowrap rounded border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs font-semibold text-gray-700"
+      data-component="ColorBadge"
+      className="inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-bold text-white"
+      style={{ backgroundColor: color }}
     >
-      <span
-        className="h-2 w-2 shrink-0 rounded-full"
-        style={{ backgroundColor: color }}
-      />
       {name}
     </span>
   );
@@ -82,6 +79,7 @@ export function ProjectSection({
           return issue.assignee?.name ?? "";
         case "id":
         case "title":
+        case "issueType":
         case "status":
         case "remarks":
           return issue[sortKey];
@@ -159,7 +157,7 @@ export function ProjectSection({
             {sortedIssues.length === 0 ? (
               <tr>
                 <td
-                  colSpan={5}
+                  colSpan={6}
                   className="px-4 py-8 text-center text-sm text-gray-400"
                 >
                   No matching issues
@@ -172,6 +170,12 @@ export function ProjectSection({
                   className="cursor-pointer border-b border-gray-100 last:border-b-0 hover:bg-gray-50"
                   onClick={() => window.open(issue.url, "_blank")}
                 >
+                  <td className="px-4 py-3">
+                    <ColorBadge
+                      name={issue.issueType}
+                      color={issue.issueTypeColor}
+                    />
+                  </td>
                   <td className="px-4 py-3 text-sm font-medium text-gray-600">
                     {issue.id}
                   </td>
@@ -181,13 +185,14 @@ export function ProjectSection({
                   <td className="px-4 py-3">
                     {issue.assignee ? (
                       <div className="flex items-center gap-2">
-                        <Avatar className="h-7 w-7 shrink-0">
-                          <AvatarFallback
-                            className={`text-xs font-medium ${issue.assignee.avatarColor}`}
-                          >
-                            {issue.assignee.initials}
-                          </AvatarFallback>
-                        </Avatar>
+                        {issue.assignee.avatarUrl && (
+                          <img
+                            src={issue.assignee.avatarUrl}
+                            alt={issue.assignee.name}
+                            className="hidden h-7 w-7 shrink-0 rounded-full object-cover"
+                            onLoad={(e) => e.currentTarget.classList.remove("hidden")}
+                          />
+                        )}
                         <span className="truncate text-sm text-gray-700">
                           {issue.assignee.name}
                         </span>
@@ -197,7 +202,7 @@ export function ProjectSection({
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    <StatusBadge
+                    <ColorBadge
                       name={issue.status}
                       color={
                         statusColorMap.get(issue.status) ?? issue.statusColor
