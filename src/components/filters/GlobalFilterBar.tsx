@@ -1,8 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowUp, SlidersHorizontal, User } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { ArrowUp, LayoutGrid, SlidersHorizontal, User, Users } from "lucide-react";
 import type { Assignee } from "@/types";
+
+const GROUPED_BY_OPTIONS = [
+  { href: "/projects", label: "プロジェクト", icon: LayoutGrid },
+  { href: "/assignees", label: "担当者", icon: Users },
+] as const;
 
 export type StatusOption = {
   name: string;
@@ -61,6 +68,7 @@ export function GlobalFilterBar({
   hasUnassigned,
   onAssigneeSelect,
 }: GlobalFilterBarProps) {
+  const pathname = usePathname();
   const [activeProject, setActiveProject] = useState("All Projects");
 
   /**
@@ -106,6 +114,7 @@ export function GlobalFilterBar({
 
   return (
     <div data-component="GlobalFilterBar" className="sticky top-0 z-30 m-4 my-3 rounded-xl bg-white p-3 shadow-md">
+      {/* Filters ヘッダー */}
       <div className="mb-2 flex items-center gap-2 border-b border-gray-200 px-1 pb-2">
         <SlidersHorizontal className="h-4 w-4 text-backhub" />
         <span className="text-sm font-semibold tracking-wide text-gray-700">
@@ -121,6 +130,30 @@ export function GlobalFilterBar({
       </div>
       <div className="px-6 pb-3">
         <div className="flex flex-col gap-y-2">
+          {/* Grouped By: 画面切り替えナビゲーション */}
+          <div className="flex flex-wrap items-center gap-1">
+            <span className="mr-2 text-xs font-medium uppercase tracking-wider text-gray-500">
+              Grouped By
+            </span>
+            {GROUPED_BY_OPTIONS.map((tab) => {
+              const isActive = pathname === tab.href;
+              const Icon = tab.icon;
+              return (
+                <Link
+                  key={tab.href}
+                  href={tab.href}
+                  className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                    isActive
+                      ? "bg-backhub text-white"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-300"
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  {tab.label}
+                </Link>
+              );
+            })}
+          </div>
           {/* Project Tabs */}
           {showProjectFilter && (
             <div className="flex flex-wrap items-center gap-1">

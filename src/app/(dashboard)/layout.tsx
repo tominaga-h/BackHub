@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import { Header } from "@/components/layout/Header";
 import { GlobalFilterBar } from "@/components/filters/GlobalFilterBar";
-import { ViewTabs } from "@/components/layout/ViewTabs";
+
 import { AssigneeSidebar } from "@/components/filters/AssigneeSidebar";
 import { ProjectDataProvider, useProjectData } from "@/contexts/ProjectDataContext";
 
@@ -107,8 +107,6 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
         hasUnassigned={filteredAssigneeOptions.hasUnassigned && activeAssignees.has("unassigned")}
         onAssigneeSelect={handleAssigneeSelect}
       />
-      {/* プロジェクトビュー/担当者ビューの切り替えタブ */}
-      <ViewTabs />
       {/* 担当者ビューではサイドバーを表示、プロジェクトビューではサイドバーなし */}
       {isAssigneesView ? (
         <div className="flex flex-1">
