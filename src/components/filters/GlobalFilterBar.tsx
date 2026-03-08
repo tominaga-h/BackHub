@@ -191,7 +191,7 @@ export function GlobalFilterBar({
           {/* Grouped By: 画面切り替えナビゲーション */}
           <div className="flex items-baseline gap-2">
             <FilterTitle>Grouped By</FilterTitle>
-            <div className="flex flex-wrap items-center gap-1">
+            <div className="flex flex-wrap items-center gap-2">
               {GROUPED_BY_OPTIONS.map((tab) => {
                 const isActive = pathname === tab.href;
                 const Icon = tab.icon;
@@ -199,10 +199,10 @@ export function GlobalFilterBar({
                   <Link
                     key={tab.href}
                     href={tab.href}
-                    className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                    className={`inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-2 font-medium transition-colors min-w-100 ${
                       isActive
-                        ? "bg-backhub text-white"
-                        : "bg-gray-100 text-gray-600 hover:bg-gray-300"
+                        ? "border border-backhub text-backhub font-bold text-sm"
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-300 text-sm"
                     }`}
                   >
                     <Icon className="h-4 w-4" />
@@ -216,7 +216,7 @@ export function GlobalFilterBar({
           {showProjectFilter && (
             <div className="flex items-baseline gap-2">
               <FilterTitle>Project</FilterTitle>
-              <div className="flex flex-wrap items-center gap-1">
+              <div className="flex flex-wrap items-center gap-2">
                 {tabs.map((tab) => (
                   <button
                     key={tab}
@@ -276,7 +276,7 @@ export function GlobalFilterBar({
           {showAssigneeFilter && assigneeFilterOptions && (
             <div className="flex items-baseline gap-2">
               <FilterTitle>Human</FilterTitle>
-              <div className="flex flex-wrap items-center gap-1">
+              <div className="flex flex-wrap items-center gap-2">
                 {assigneeFilterOptions.map((a) => (
                   <button
                     key={a.id}
