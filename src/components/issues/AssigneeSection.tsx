@@ -31,11 +31,21 @@ const COLUMNS: readonly ColumnDef[] = [
   { key: "remarks", label: "備考", width: "w-[300px]" },
 ] as const;
 
+/**
+ * ISO 8601形式の日付文字列を "YYYY/MM/DD" 形式にフォーマットする。
+ * @param iso - ISO 8601形式の日付文字列
+ * @returns "YYYY/MM/DD" 形式の文字列
+ */
 function formatDate(iso: string): string {
   const d = new Date(iso);
   return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}`;
 }
 
+/**
+ * 指定した色を背景色とするラベルバッジ。ステータスや課題種別の表示に使用する。
+ * @param name - バッジに表示するテキスト
+ * @param color - 背景色（CSS color値）
+ */
 function ColorBadge({ name, color }: { name: string; color: string }) {
   return (
     <span
@@ -55,6 +65,15 @@ type AssigneeSectionProps = {
   onRemarksChange?: (issueId: string, remarks: string) => void;
 };
 
+/**
+ * 担当者ビューにおける1人分の担当者セクション。
+ * 担当者のアバター・名前をヘッダーに表示し、その担当者に紐づく課題をテーブルで一覧する。
+ * カラムヘッダークリックでソート、備考欄のインライン編集に対応する。
+ * @param assignee - 担当者情報（null の場合は「未割当」として表示）
+ * @param issues - この担当者に紐づく課題一覧（プロジェクト情報付き）
+ * @param statusColorMap - ステータス名 → 色のマップ
+ * @param onRemarksChange - 備考変更時のコールバック
+ */
 export function AssigneeSection({
   assignee,
   issues,
@@ -64,8 +83,14 @@ export function AssigneeSection({
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [editingIssueId, setEditingIssueId] = useState<string | null>(null);
+  /** ローカルで編集された備考のキャッシュ（issueId → テキスト） */
   const [remarksMap, setRemarksMap] = useState<Record<string, string>>({});
 
+  /**
+   * カラムヘッダークリック時のソート切り替え。
+   * 同じカラムをクリックすると昇順/降順をトグル、別カラムなら昇順にリセットする。
+   * @param key - ソート対象のカラムキー
+   */
   const handleSort = useCallback(
     (key: SortKey) => {
       if (sortKey === key) {
@@ -78,9 +103,11 @@ export function AssigneeSection({
     [sortKey],
   );
 
+  /** ソートキーに基づいて課題を並び替えた配列（ソート未指定時は元の順序を維持） */
   const sortedIssues = useMemo(() => {
     if (!sortKey) return issues;
 
+    // 各課題からソート対象の文字列値を取得するヘルパー
     const getValue = (issue: IssueWithProject): string => {
       switch (sortKey) {
         case "project":

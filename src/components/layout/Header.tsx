@@ -4,6 +4,10 @@ import { Search, Bell, Settings } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
+/**
+ * アプリケーションヘッダー。
+ * ロゴ、検索バー、設定ボタン、ユーザー情報を表示する。
+ */
 export function Header() {
   return (
     <header data-component="Header" className="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4">

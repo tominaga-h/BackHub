@@ -23,6 +23,18 @@ type ProjectSettingsSidebarProps = {
   issues?: Issue[];
 };
 
+/**
+ * プロジェクト固有フィルターの設定サイドバー（右側からスライドイン）。
+ * ステータス、担当者、課題種別、マイルストーンのチェックボックスフィルターを提供する。
+ * 各フィルター項目の横には、選択中のステータスに基づく該当課題数を表示する。
+ * @param open - サイドバーの開閉状態
+ * @param onOpenChange - 開閉状態変更時のコールバック
+ * @param projectName - 対象プロジェクト名
+ * @param settings - プロジェクトの設定（ステータス一覧、担当者一覧等）
+ * @param currentFilters - 現在適用中のフィルター状態
+ * @param onApply - 「Update Setting」ボタン押下時のコールバック
+ * @param issues - 対象プロジェクトの課題一覧（件数カウントに使用）
+ */
 export function ProjectSettingsSidebar({
   open,
   onOpenChange,
@@ -43,14 +55,17 @@ export function ProjectSettingsSidebar({
     new Set(),
   );
 
+  // サイドバーが開いた時に、現在のフィルター状態をローカルstateに復元する
   useEffect(() => {
     if (!open) return;
     if (currentFilters) {
+      // 既にフィルターが適用済みならその値を復元
       setSelectedStatuses(new Set(currentFilters.statuses));
       setSelectedAssignees(new Set(currentFilters.assignees));
       setSelectedTypes(new Set(currentFilters.issueTypes));
       setSelectedMilestones(new Set(currentFilters.milestones));
     } else if (settings) {
+      // フィルター未設定の場合は全選択をデフォルトにする
       setSelectedStatuses(
         new Set(settings.statuses.map((s) => s.name)),
       );
@@ -64,11 +79,13 @@ export function ProjectSettingsSidebar({
     }
   }, [open, currentFilters, settings]);
 
+  /** 選択中のステータスに該当する課題のみに絞り込んだリスト（件数カウントのベース） */
   const statusFilteredIssues = useMemo(
     () => issues.filter((issue) => selectedStatuses.has(issue.status)),
     [issues, selectedStatuses],
   );
 
+  /** 担当者名 → 該当課題数のマップ */
   const assigneeIssueCounts = useMemo(() => {
     const counts = new Map<string, number>();
     for (const issue of statusFilteredIssues) {
@@ -80,11 +97,13 @@ export function ProjectSettingsSidebar({
     return counts;
   }, [statusFilteredIssues]);
 
+  /** 選択中ステータスの課題に1件以上紐づく担当者のみを表示対象にする */
   const visibleAssignees = useMemo(
     () => settings?.assignees.filter((a) => assigneeIssueCounts.has(a.name)) ?? [],
     [settings?.assignees, assigneeIssueCounts],
   );
 
+  /** 課題種別名 → 該当課題数のマップ */
   const issueTypeIssueCounts = useMemo(() => {
     const counts = new Map<string, number>();
     for (const issue of statusFilteredIssues) {
@@ -93,6 +112,7 @@ export function ProjectSettingsSidebar({
     return counts;
   }, [statusFilteredIssues]);
 
+  /** マイルストーン名 → 該当課題数のマップ（未設定は UNSET_MILESTONE キーでカウント） */
   const milestoneIssueCounts = useMemo(() => {
     const counts = new Map<string, number>();
     for (const issue of statusFilteredIssues) {
@@ -107,6 +127,12 @@ export function ProjectSettingsSidebar({
     return counts;
   }, [statusFilteredIssues]);
 
+  /**
+   * Set<string> のステート更新用の汎用トグル関数。
+   * 指定した値が Set に含まれていれば削除、なければ追加する。
+   * @param setter - 更新対象のステートセッター
+   * @param value - トグルする値
+   */
   const toggle = (
     setter: React.Dispatch<React.SetStateAction<Set<string>>>,
     value: string,
@@ -122,6 +148,9 @@ export function ProjectSettingsSidebar({
     });
   };
 
+  /**
+   * 「Update Setting」ボタン押下時にフィルターを適用してサイドバーを閉じる。
+   */
   const handleApply = () => {
     onApply?.({
       statuses: new Set(selectedStatuses),

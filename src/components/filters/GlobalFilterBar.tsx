@@ -22,6 +22,21 @@ type GlobalFilterBarProps = {
   onAssigneeSelect?: (assigneeId: string) => void;
 };
 
+/**
+ * 画面上部に固定表示されるグローバルフィルターバー。
+ * プロジェクト切り替えタブ、担当者ショートカット、ステータスフィルターを提供する。
+ * プロジェクトビュー時はプロジェクトタブ、担当者ビュー時は担当者ショートカットを表示する。
+ * @param projectNames - プロジェクト名一覧（タブ表示用）
+ * @param onProjectSelect - プロジェクト選択時のコールバック
+ * @param statusOptions - ステータス選択肢一覧
+ * @param activeStatuses - 現在有効なステータスの Set
+ * @param onStatusChange - ステータス変更時のコールバック
+ * @param showProjectFilter - プロジェクトタブを表示するか
+ * @param showAssigneeFilter - 担当者ショートカットを表示するか
+ * @param assigneeFilterOptions - 担当者ショートカットの選択肢
+ * @param hasUnassigned - 「未割当」ショートカットを表示するか
+ * @param onAssigneeSelect - 担当者ショートカットクリック時のコールバック
+ */
 export function GlobalFilterBar({
   projectNames,
   onProjectSelect,
@@ -36,6 +51,10 @@ export function GlobalFilterBar({
 }: GlobalFilterBarProps) {
   const [activeProject, setActiveProject] = useState("All Projects");
 
+  /**
+   * ステータスボタンの個別トグル。
+   * @param status - トグル対象のステータス名
+   */
   const toggleStatus = (status: string) => {
     const next = new Set(activeStatuses);
     if (next.has(status)) {

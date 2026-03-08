@@ -11,11 +11,13 @@ import {
 import type { Assignee, Project } from "@/types";
 import type { StatusOption } from "@/components/filters/GlobalFilterBar";
 
+/** ステータスでフィルタリングされた後の担当者選択肢 */
 type FilteredAssigneeOptions = {
   assignees: Assignee[];
   hasUnassigned: boolean;
 };
 
+/** ProjectDataContext が提供する値の型定義 */
 type ProjectDataContextValue = {
   projects: Project[];
   loading: boolean;
@@ -33,6 +35,11 @@ type ProjectDataContextValue = {
 
 const ProjectDataContext = createContext<ProjectDataContextValue | null>(null);
 
+/**
+ * ProjectDataContext から値を取得するカスタムフック。
+ * ProjectDataProvider の外で使用するとエラーをスローする。
+ * @returns コンテキスト値（プロジェクトデータ、フィルター状態等）
+ */
 export function useProjectData() {
   const ctx = useContext(ProjectDataContext);
   if (!ctx) {
@@ -41,6 +48,11 @@ export function useProjectData() {
   return ctx;
 }
 
+/**
+ * プロジェクトデータの取得・管理を行うコンテキストプロバイダー。
+ * マウント時に /api/backlog/projects からデータを取得し、各種フィルター状態を管理する。
+ * @param children - 子コンポーネント
+ */
 export function ProjectDataProvider({ children }: { children: ReactNode }) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,6 +60,7 @@ export function ProjectDataProvider({ children }: { children: ReactNode }) {
   const [activeStatuses, setActiveStatuses] = useState<Set<string>>(new Set());
   const [activeAssignees, setActiveAssignees] = useState<Set<string>>(new Set());
 
+  // 初回マウント時にプロジェクトデータを取得し、初期フィルター状態を設定する
   useEffect(() => {
     fetch("/api/backlog/projects")
       .then((res) => {
@@ -56,11 +69,14 @@ export function ProjectDataProvider({ children }: { children: ReactNode }) {
       })
       .then((data: { projects: Project[]; errors?: string[] }) => {
         setProjects(data.projects);
+        // 全プロジェクトのステータスを集約
         const allStatuses = new Set<string>();
         const closedNames = new Set<string>();
         data.projects.forEach((p) =>
           p.settings.statuses.forEach((s) => {
             allStatuses.add(s.name);
+            // Backlog のステータス id=4 は「完了（Closed）」を示す
+            // 初期状態では完了ステータスを非表示にする
             if (s.id === 4) closedNames.add(s.name);
           }),
         );
@@ -71,6 +87,7 @@ export function ProjectDataProvider({ children }: { children: ReactNode }) {
       .finally(() => setLoading(false));
   }, []);
 
+  /** 全プロジェクトのステータスを重複排除した選択肢一覧 */
   const statusOptions = useMemo(() => {
     const seen = new Map<string, string>();
     projects.forEach((p) =>
@@ -81,8 +98,10 @@ export function ProjectDataProvider({ children }: { children: ReactNode }) {
     return Array.from(seen.entries()).map(([name, color]) => ({ name, color }));
   }, [projects]);
 
+  /** 全プロジェクト名の配列 */
   const projectNames = useMemo(() => projects.map((p) => p.name), [projects]);
 
+  /** ステータス名 → 色のルックアップマップ（全プロジェクト横断） */
   const statusColorMap = useMemo(() => {
     const map = new Map<string, string>();
     projects.forEach((p) =>
@@ -91,6 +110,7 @@ export function ProjectDataProvider({ children }: { children: ReactNode }) {
     return map;
   }, [projects]);
 
+  /** 全プロジェクトの担当者を重複排除・日本語名順ソートした一覧 */
   const assigneeOptions = useMemo(() => {
     const seen = new Map<number, Assignee>();
     projects.forEach((p) =>
@@ -103,6 +123,10 @@ export function ProjectDataProvider({ children }: { children: ReactNode }) {
     );
   }, [projects]);
 
+  /**
+   * 現在のステータスフィルターで絞り込んだ課題に登場する担当者のみを抽出する。
+   * ステータスフィルターを変更すると、関連しない担当者は選択肢から消える。
+   */
   const filteredAssigneeOptions = useMemo<FilteredAssigneeOptions>(() => {
     const seen = new Map<number, Assignee>();
     let hasUnassigned = false;
@@ -124,9 +148,11 @@ export function ProjectDataProvider({ children }: { children: ReactNode }) {
     return { assignees, hasUnassigned };
   }, [projects, activeStatuses]);
 
+  // 担当者一覧が初めて読み込まれた時に、全担当者（＋未割当）を初期選択状態にする
   useEffect(() => {
     if (assigneeOptions.length === 0) return;
     setActiveAssignees((prev) => {
+      // 既に選択状態がある場合は上書きしない（ユーザーが手動で変更した場合を考慮）
       if (prev.size > 0) return prev;
       const all = new Set(assigneeOptions.map((a) => a.id.toString()));
       all.add("unassigned");

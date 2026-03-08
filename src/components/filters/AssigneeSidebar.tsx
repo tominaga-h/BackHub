@@ -10,12 +10,20 @@ type AssigneeSidebarProps = {
   onAssigneeChange: (assignees: Set<string>) => void;
 };
 
+/**
+ * 担当者ビューの左サイドバー。担当者一覧をチェックボックスで表示し、表示/非表示を切り替える。
+ * @param assigneeOptions - 選択可能な担当者一覧
+ * @param hasUnassigned - 「未割当」オプションを表示するか
+ * @param activeAssignees - 現在選択中の担当者IDの Set
+ * @param onAssigneeChange - 選択状態変更時のコールバック
+ */
 export function AssigneeSidebar({
   assigneeOptions,
   hasUnassigned,
   activeAssignees,
   onAssigneeChange,
 }: AssigneeSidebarProps) {
+  // 全担当者キー（"unassigned" を含む場合あり）を構築
   const allKeys = [
     ...assigneeOptions.map((a) => a.id.toString()),
     ...(hasUnassigned ? ["unassigned"] : []),
@@ -24,10 +32,15 @@ export function AssigneeSidebar({
   const allChecked =
     assigneeOptions.length > 0 && allKeys.every((k) => activeAssignees.has(k));
 
+  /** 「All」チェックボックスの切り替え。全選択 ↔ 全解除をトグルする。 */
   const toggleAll = () => {
     onAssigneeChange(allChecked ? new Set<string>() : new Set(allKeys));
   };
 
+  /**
+   * 個別の担当者チェックボックスの切り替え。
+   * @param key - 担当者ID（文字列）または "unassigned"
+   */
   const toggle = (key: string) => {
     const next = new Set(activeAssignees);
     if (next.has(key)) {

@@ -9,6 +9,10 @@ const TABS = [
   { href: "/assignees", label: "担当者ごと", icon: Users },
 ] as const;
 
+/**
+ * プロジェクトビュー / 担当者ビューを切り替えるタブナビゲーション。
+ * 現在のパスに基づいてアクティブタブをハイライトする。
+ */
 export function ViewTabs() {
   const pathname = usePathname();
 

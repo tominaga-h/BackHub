@@ -8,31 +8,44 @@ import { useProjectData } from "@/contexts/ProjectDataContext";
 import { UNSET_MILESTONE } from "@/types";
 import type { ProjectFilters } from "@/types";
 
+/**
+ * プロジェクトの設定情報からデフォルトのフィルター状態を生成する。
+ * 初期状態では全ての担当者・課題種別・マイルストーンが選択された状態になる。
+ * @param project - プロジェクトの設定情報
+ * @param activeStatuses - 現在グローバルで有効なステータスの Set
+ * @returns 初期フィルター状態
+ */
 function buildDefaultFilters(
-  project: { settings: { statuses: { name: string }[]; assignees: { name: string }[]; issueTypes: { name: string }[]; milestones: { name: string }[] } },
+  project: { settings: { assignees: { name: string }[]; issueTypes: { name: string }[]; milestones: { name: string }[] } },
   activeStatuses: Set<string>,
 ): ProjectFilters {
   return {
-    statuses: new Set(
-      project.settings.statuses
-        .map((s) => s.name)
-        .filter((name) => activeStatuses.has(name)),
-    ),
+    statuses: new Set(activeStatuses),
     assignees: new Set(project.settings.assignees.map((a) => a.name)),
     issueTypes: new Set(project.settings.issueTypes.map((t) => t.name)),
+    // UNSET_MILESTONE: マイルストーン未設定の課題もデフォルトで表示対象に含める
     milestones: new Set([UNSET_MILESTONE, ...project.settings.milestones.map((m) => m.name)]),
   };
 }
 
+/**
+ * 課題がプロジェクト固有フィルター条件に一致するかを判定する。
+ * 全条件（ステータス、担当者、課題種別、マイルストーン）の AND 条件で評価する。
+ * @param issue - 判定対象の課題
+ * @param filters - 適用中のフィルター
+ * @returns フィルター条件に一致する場合 true
+ */
 function matchesProjectFilters(
   issue: { status: string; assignee: { name: string } | null; issueType: string; milestones: string[] },
   filters: ProjectFilters,
 ): boolean {
   const statusMatch = filters.statuses.has(issue.status);
+  // 担当者未設定の課題はフィルターに関係なく表示する
   const assigneeMatch = issue.assignee
     ? filters.assignees.has(issue.assignee.name)
     : true;
   const typeMatch = filters.issueTypes.has(issue.issueType);
+  // マイルストーン未設定の課題は UNSET_MILESTONE の選択状態で判定
   const milestoneMatch =
     issue.milestones.length === 0
       ? filters.milestones.has(UNSET_MILESTONE)
@@ -40,37 +53,41 @@ function matchesProjectFilters(
   return statusMatch && assigneeMatch && typeMatch && milestoneMatch;
 }
 
+/**
+ * プロジェクトビューのメインページ。
+ * 各プロジェクトのセクションを一覧表示し、プロジェクト固有フィルターのサイドバーを提供する。
+ */
 export default function ProjectsPage() {
   const { projects, activeStatuses } = useProjectData();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
+  /** プロジェクトIDごとの個別フィルター状態を管理 */
   const [filtersMap, setFiltersMap] = useState<Record<string, ProjectFilters>>({});
 
+  // グローバルステータスフィルターの変更をプロジェクト個別フィルターに反映する
   useEffect(() => {
     if (projects.length === 0 || activeStatuses.size === 0) return;
     setFiltersMap((prev) => {
       const next = { ...prev };
       let changed = false;
       for (const p of projects) {
-        const newStatuses = new Set(
-          p.settings.statuses
-            .map((s) => s.name)
-            .filter((name) => activeStatuses.has(name)),
-        );
         if (!next[p.id]) {
+          // 未初期化のプロジェクトにはデフォルトフィルターを設定
           next[p.id] = buildDefaultFilters(p, activeStatuses);
           changed = true;
         } else {
+          // 既存フィルターのステータス部分のみグローバルと同期する
           const current = next[p.id].statuses;
           const isSame =
-            current.size === newStatuses.size &&
-            [...newStatuses].every((s) => current.has(s));
+            current.size === activeStatuses.size &&
+            [...activeStatuses].every((s) => current.has(s));
           if (!isSame) {
-            next[p.id] = { ...next[p.id], statuses: newStatuses };
+            next[p.id] = { ...next[p.id], statuses: new Set(activeStatuses) };
             changed = true;
           }
         }
       }
+      // 不要な再レンダリングを避けるため、変更がなければ前回の参照をそのまま返す
       return changed ? next : prev;
     });
   }, [projects, activeStatuses]);
@@ -95,11 +112,19 @@ export default function ProjectsPage() {
     [projects, filtersMap],
   );
 
+  /**
+   * プロジェクト設定サイドバーを開く。
+   * @param projectId - 設定を開く対象のプロジェクトID
+   */
   const handleOpenSettings = (projectId: string) => {
     setActiveProjectId(projectId);
     setSidebarOpen(true);
   };
 
+  /**
+   * プロジェクト設定サイドバーで「適用」を押した時にフィルターを更新する。
+   * @param filters - 新しいフィルター状態
+   */
   const handleApplyFilters = useCallback(
     (filters: ProjectFilters) => {
       if (!activeProjectId) return;
@@ -108,6 +133,11 @@ export default function ProjectsPage() {
     [activeProjectId],
   );
 
+  /**
+   * 課題の備考欄が編集された時のハンドラ。
+   * @param issueId - 課題ID（課題キー）
+   * @param remarks - 新しい備考テキスト
+   */
   const handleRemarksChange = (issueId: string, remarks: string) => {
     // TODO: Supabase 導入後に DB 保存処理に置き換え
     console.log("remarks changed:", issueId, remarks);
