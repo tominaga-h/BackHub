@@ -87,13 +87,22 @@ async function upsertMembers(
   users: RawProjectData["users"],
   userAvatars: RawProjectData["userAvatars"],
 ) {
+  const userIds = users.map((u) => u.id);
+  const { data: existing } = await db
+    .from("members")
+    .select("id, avatar_url")
+    .in("id", userIds);
+  const existingAvatars: Record<number, string | null> = Object.fromEntries(
+    (existing ?? []).map((m) => [m.id, m.avatar_url]),
+  );
+
   const rows: TablesInsert<"members">[] = users.map((u) => ({
     id: u.id,
     backlog_user_id: u.userId,
     name: u.name,
     mail_address: u.mailAddress || null,
     role_type: u.roleType,
-    avatar_url: userAvatars[u.id] ?? null,
+    avatar_url: userAvatars[u.id] ?? existingAvatars[u.id] ?? null,
   }));
   const { error } = await db
     .from("members")

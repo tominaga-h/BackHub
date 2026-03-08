@@ -16,7 +16,7 @@ export type RawProjectData = {
   icon?: string;
 };
 
-async function fetchImageAsDataUri(
+export async function fetchImageAsDataUri(
   url: string,
 ): Promise<string | undefined> {
   try {
@@ -40,7 +40,7 @@ export async function fetchProjectIcon(
   );
 }
 
-async function fetchUserAvatars(
+export async function fetchUserAvatars(
   host: string,
   apiKey: string,
   userIds: number[],
