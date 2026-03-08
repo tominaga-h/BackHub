@@ -1,0 +1,7 @@
+@src/components/filters/GlobalFilterBar.tsx 
+すべてのフィルターの値のgapを2にして `gap-2`
+
+---
+
+@src/components/filters/GlobalFilterBar.tsx 
+Grouped By のフィルター値を `min-w-70` にしたので、文字列をセンタリングしてほしい
