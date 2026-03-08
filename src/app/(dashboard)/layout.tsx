@@ -16,6 +16,7 @@ import { ProjectDataProvider, useProjectData } from "@/contexts/ProjectDataConte
 function DashboardShell({ children }: { children: React.ReactNode }) {
   const {
     loading, error, projectNames, statusOptions, activeStatuses, setActiveStatuses,
+    activeProjects, setActiveProjects,
     filteredAssigneeOptions, activeAssignees, setActiveAssignees,
   } = useProjectData();
   const pathname = usePathname();
@@ -97,6 +98,10 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
         activeStatuses={activeStatuses}
         onStatusChange={setActiveStatuses}
         showProjectFilter={!isAssigneesView}
+        showProjectToggleFilter={isAssigneesView}
+        projectFilterOptions={projectNames}
+        activeProjects={activeProjects}
+        onProjectFilterChange={setActiveProjects}
         showAssigneeFilter={isAssigneesView}
         assigneeFilterOptions={filteredAssigneeOptions.assignees.filter(a => activeAssignees.has(a.id.toString()))}
         hasUnassigned={filteredAssigneeOptions.hasUnassigned && activeAssignees.has("unassigned")}

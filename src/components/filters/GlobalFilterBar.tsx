@@ -16,6 +16,10 @@ type GlobalFilterBarProps = {
   activeStatuses: Set<string>;
   onStatusChange: (statuses: Set<string>) => void;
   showProjectFilter?: boolean;
+  showProjectToggleFilter?: boolean;
+  projectFilterOptions?: string[];
+  activeProjects?: Set<string>;
+  onProjectFilterChange?: (projects: Set<string>) => void;
   showAssigneeFilter?: boolean;
   assigneeFilterOptions?: Assignee[];
   hasUnassigned?: boolean;
@@ -31,7 +35,11 @@ type GlobalFilterBarProps = {
  * @param statusOptions - ステータス選択肢一覧
  * @param activeStatuses - 現在有効なステータスの Set
  * @param onStatusChange - ステータス変更時のコールバック
- * @param showProjectFilter - プロジェクトタブを表示するか
+ * @param showProjectFilter - プロジェクトタブを表示するか（プロジェクトビュー用）
+ * @param showProjectToggleFilter - プロジェクトトグルフィルターを表示するか（担当者ビュー用）
+ * @param projectFilterOptions - プロジェクトトグルフィルターの選択肢
+ * @param activeProjects - 現在有効なプロジェクトの Set
+ * @param onProjectFilterChange - プロジェクトフィルター変更時のコールバック
  * @param showAssigneeFilter - 担当者ショートカットを表示するか
  * @param assigneeFilterOptions - 担当者ショートカットの選択肢
  * @param hasUnassigned - 「未割当」ショートカットを表示するか
@@ -44,6 +52,10 @@ export function GlobalFilterBar({
   activeStatuses,
   onStatusChange,
   showProjectFilter = true,
+  showProjectToggleFilter = false,
+  projectFilterOptions,
+  activeProjects,
+  onProjectFilterChange,
   showAssigneeFilter = false,
   assigneeFilterOptions,
   hasUnassigned,
@@ -64,6 +76,27 @@ export function GlobalFilterBar({
     }
     onStatusChange(next);
   };
+
+  /**
+   * プロジェクトボタンの個別トグル。
+   * @param projectName - トグル対象のプロジェクト名
+   */
+  const toggleProject = (projectName: string) => {
+    if (!activeProjects || !onProjectFilterChange) return;
+    const next = new Set(activeProjects);
+    if (next.has(projectName)) {
+      next.delete(projectName);
+    } else {
+      next.add(projectName);
+    }
+    onProjectFilterChange(next);
+  };
+
+  const allProjectsActive =
+    !!projectFilterOptions &&
+    projectFilterOptions.length > 0 &&
+    !!activeProjects &&
+    projectFilterOptions.every((p) => activeProjects.has(p));
 
   const allStatusesActive =
     statusOptions.length > 0 &&
@@ -110,6 +143,42 @@ export function GlobalFilterBar({
                   {tab}
                 </button>
               ))}
+            </div>
+          )}
+          {/* Project Toggle Filters（担当者ビュー専用） */}
+          {showProjectToggleFilter && projectFilterOptions && activeProjects && (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="mr-1 text-xs font-medium uppercase tracking-wider text-gray-500">
+                Project
+              </span>
+              <button
+                onClick={() =>
+                  onProjectFilterChange?.(new Set(projectFilterOptions))
+                }
+                className={`rounded-sm px-3 py-1 text-xs font-semibold transition-colors ${
+                  allProjectsActive
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                }`}
+              >
+                All
+              </button>
+              {projectFilterOptions.map((name) => {
+                const isActive = activeProjects.has(name);
+                return (
+                  <button
+                    key={name}
+                    onClick={() => toggleProject(name)}
+                    className={`rounded-sm px-3 py-1 text-xs font-medium transition-colors ${
+                      isActive
+                        ? "bg-backhub font-bold text-white"
+                        : "bg-gray-100 text-gray-500"
+                    }`}
+                  >
+                    {name}
+                  </button>
+                );
+              })}
             </div>
           )}
           {showAssigneeFilter && assigneeFilterOptions && (

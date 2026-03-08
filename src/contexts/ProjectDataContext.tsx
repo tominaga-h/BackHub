@@ -24,6 +24,8 @@ type ProjectDataContextValue = {
   error: string | null;
   activeStatuses: Set<string>;
   setActiveStatuses: (statuses: Set<string>) => void;
+  activeProjects: Set<string>;
+  setActiveProjects: (projects: Set<string>) => void;
   statusOptions: StatusOption[];
   projectNames: string[];
   statusColorMap: Map<string, string>;
@@ -58,6 +60,7 @@ export function ProjectDataProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeStatuses, setActiveStatuses] = useState<Set<string>>(new Set());
+  const [activeProjects, setActiveProjects] = useState<Set<string>>(new Set());
   const [activeAssignees, setActiveAssignees] = useState<Set<string>>(new Set());
 
   // 初回マウント時にプロジェクトデータを取得し、初期フィルター状態を設定する
@@ -82,6 +85,8 @@ export function ProjectDataProvider({ children }: { children: ReactNode }) {
         );
         closedNames.forEach((name) => allStatuses.delete(name));
         setActiveStatuses(allStatuses);
+        // 初期状態では全プロジェクトを表示対象にする
+        setActiveProjects(new Set(data.projects.map((p) => p.name)));
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
@@ -130,23 +135,25 @@ export function ProjectDataProvider({ children }: { children: ReactNode }) {
   const filteredAssigneeOptions = useMemo<FilteredAssigneeOptions>(() => {
     const seen = new Map<number, Assignee>();
     let hasUnassigned = false;
-    projects.forEach((p) =>
-      p.issues
-        .filter((issue) => activeStatuses.has(issue.status))
-        .forEach((issue) => {
-          if (issue.assignee) {
-            if (!seen.has(issue.assignee.id))
-              seen.set(issue.assignee.id, issue.assignee);
-          } else {
-            hasUnassigned = true;
-          }
-        }),
-    );
+    projects
+      .filter((p) => activeProjects.has(p.name))
+      .forEach((p) =>
+        p.issues
+          .filter((issue) => activeStatuses.has(issue.status))
+          .forEach((issue) => {
+            if (issue.assignee) {
+              if (!seen.has(issue.assignee.id))
+                seen.set(issue.assignee.id, issue.assignee);
+            } else {
+              hasUnassigned = true;
+            }
+          }),
+      );
     const assignees = Array.from(seen.values()).sort((a, b) =>
       a.name.localeCompare(b.name, "ja"),
     );
     return { assignees, hasUnassigned };
-  }, [projects, activeStatuses]);
+  }, [projects, activeStatuses, activeProjects]);
 
   // 担当者一覧が初めて読み込まれた時に、全担当者（＋未割当）を初期選択状態にする
   useEffect(() => {
@@ -167,6 +174,8 @@ export function ProjectDataProvider({ children }: { children: ReactNode }) {
       error,
       activeStatuses,
       setActiveStatuses,
+      activeProjects,
+      setActiveProjects,
       statusOptions,
       projectNames,
       statusColorMap,
@@ -175,7 +184,7 @@ export function ProjectDataProvider({ children }: { children: ReactNode }) {
       activeAssignees,
       setActiveAssignees,
     }),
-    [projects, loading, error, activeStatuses, statusOptions, projectNames, statusColorMap, assigneeOptions, filteredAssigneeOptions, activeAssignees],
+    [projects, loading, error, activeStatuses, activeProjects, statusOptions, projectNames, statusColorMap, assigneeOptions, filteredAssigneeOptions, activeAssignees],
   );
 
   return (
