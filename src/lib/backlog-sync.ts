@@ -19,7 +19,7 @@ export async function syncProjectToDatabase(
 
   try {
     // 1. projects
-    await upsertProject(db, project);
+    await upsertProject(db, project, rawData.icon);
 
     // 2. members (FK なし、先に投入)
     if (users.length > 0) {
@@ -67,12 +67,14 @@ type SupabaseClient = ReturnType<typeof createServiceClient>;
 async function upsertProject(
   db: SupabaseClient,
   project: RawProjectData["project"],
+  icon: string | undefined,
 ) {
   const { error } = await db.from("projects").upsert(
     {
       id: project.id,
       project_key: project.projectKey,
       name: project.name,
+      icon_url: icon ?? null,
       synced_at: new Date().toISOString(),
     },
     { onConflict: "id" },
