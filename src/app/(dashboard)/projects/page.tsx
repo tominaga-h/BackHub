@@ -9,15 +9,11 @@ import { UNSET_MILESTONE } from "@/types";
 import type { ProjectFilters } from "@/types";
 
 function buildDefaultFilters(
-  project: { settings: { statuses: { name: string }[]; assignees: { name: string }[]; issueTypes: { name: string }[]; milestones: { name: string }[] } },
+  project: { settings: { assignees: { name: string }[]; issueTypes: { name: string }[]; milestones: { name: string }[] } },
   activeStatuses: Set<string>,
 ): ProjectFilters {
   return {
-    statuses: new Set(
-      project.settings.statuses
-        .map((s) => s.name)
-        .filter((name) => activeStatuses.has(name)),
-    ),
+    statuses: new Set(activeStatuses),
     assignees: new Set(project.settings.assignees.map((a) => a.name)),
     issueTypes: new Set(project.settings.issueTypes.map((t) => t.name)),
     milestones: new Set([UNSET_MILESTONE, ...project.settings.milestones.map((m) => m.name)]),
@@ -52,21 +48,16 @@ export default function ProjectsPage() {
       const next = { ...prev };
       let changed = false;
       for (const p of projects) {
-        const newStatuses = new Set(
-          p.settings.statuses
-            .map((s) => s.name)
-            .filter((name) => activeStatuses.has(name)),
-        );
         if (!next[p.id]) {
           next[p.id] = buildDefaultFilters(p, activeStatuses);
           changed = true;
         } else {
           const current = next[p.id].statuses;
           const isSame =
-            current.size === newStatuses.size &&
-            [...newStatuses].every((s) => current.has(s));
+            current.size === activeStatuses.size &&
+            [...activeStatuses].every((s) => current.has(s));
           if (!isSame) {
-            next[p.id] = { ...next[p.id], statuses: newStatuses };
+            next[p.id] = { ...next[p.id], statuses: new Set(activeStatuses) };
             changed = true;
           }
         }

@@ -115,7 +115,7 @@ async function upsertStatuses(
   }));
   const { error } = await db
     .from("statuses")
-    .upsert(rows, { onConflict: "id" });
+    .upsert(rows, { onConflict: "project_id, id" });
   if (error) throw new Error(`statuses: ${error.message}`);
 }
 
@@ -133,7 +133,7 @@ async function upsertIssueTypes(
   }));
   const { error } = await db
     .from("issue_types")
-    .upsert(rows, { onConflict: "id" });
+    .upsert(rows, { onConflict: "project_id, id" });
   if (error) throw new Error(`issue_types: ${error.message}`);
 }
 
