@@ -1,0 +1,32 @@
+{
+  "cli_version": "0.5.0",
+  "checkpoint_id": "b45fd18bcbac",
+  "session_id": "9cd13697-9e74-4b38-b2eb-31594c85feb9",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-08T15:10:50.19759Z",
+  "branch": "develop",
+  "checkpoints_count": 8,
+  "files_touched": [
+    "src/app/(dashboard)/assignees/page.tsx",
+    "src/app/(dashboard)/projects/page.tsx",
+    "src/app/api/backlog/projects/route.ts",
+    "src/app/api/issues/remarks/route.ts",
+    "src/components/issues/AssigneeSection.tsx",
+    "src/components/issues/ProjectSection.tsx"
+  ],
+  "agent": "Cursor",
+  "model": "claude-4.6-opus-high-thinking",
+  "turn_id": "2c5c59e04ee8",
+  "session_metrics": {
+    "turn_count": 9
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-08T15:10:50.128288Z",
+    "agent_lines": 58,
+    "human_added": 75,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 133,
+    "agent_percentage": 43.609022556390975
+  }
+}
