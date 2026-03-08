@@ -6,9 +6,14 @@ import { Button } from "@/components/ui/button";
 import { useProjectData } from "@/contexts/ProjectDataContext";
 import type { Assignee, IssueWithProject } from "@/types";
 
+/**
+ * 担当者ビューのメインページ。
+ * 全プロジェクトの課題を担当者ごとにグルーピングして表示する。
+ */
 export default function AssigneesPage() {
   const { projects, activeStatuses, statusColorMap, activeAssignees } = useProjectData();
 
+  // 全プロジェクトの課題を担当者ごとにグルーピングし、担当者名でソート
   const groupedByAssignee = useMemo(() => {
     const map = new Map<
       string,
@@ -17,12 +22,15 @@ export default function AssigneesPage() {
 
     projects.forEach((project) => {
       project.issues
+        // グローバルステータスフィルターを適用
         .filter((issue) => activeStatuses.has(issue.status))
         .forEach((issue) => {
+          // 担当者未設定の課題は "unassigned" キーでグルーピング
           const key = issue.assignee?.id?.toString() ?? "unassigned";
           if (!map.has(key)) {
             map.set(key, { assignee: issue.assignee, issues: [] });
           }
+          // 課題にプロジェクト情報を付加して IssueWithProject 型にする
           map.get(key)!.issues.push({
             ...issue,
             projectName: project.name,
@@ -31,6 +39,7 @@ export default function AssigneesPage() {
         });
     });
 
+    // 未担当を末尾に、それ以外は日本語ロケールで名前順ソート
     return Array.from(map.values()).sort((a, b) => {
       if (!a.assignee) return 1;
       if (!b.assignee) return -1;
@@ -38,6 +47,7 @@ export default function AssigneesPage() {
     });
   }, [projects, activeStatuses]);
 
+  // サイドバーで選択された担当者のみを表示対象にする
   const visibleGroups = useMemo(
     () =>
       groupedByAssignee.filter((g) => {
@@ -53,6 +63,11 @@ export default function AssigneesPage() {
     0,
   );
 
+  /**
+   * 課題の備考欄が編集された時のハンドラ。
+   * @param issueId - 課題ID（課題キー）
+   * @param remarks - 新しい備考テキスト
+   */
   const handleRemarksChange = (issueId: string, remarks: string) => {
     // TODO: Supabase 導入後に DB 保存処理に置き換え
     console.log("remarks changed:", issueId, remarks);

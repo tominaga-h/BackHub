@@ -7,6 +7,12 @@ import { ViewTabs } from "@/components/layout/ViewTabs";
 import { AssigneeSidebar } from "@/components/filters/AssigneeSidebar";
 import { ProjectDataProvider, useProjectData } from "@/contexts/ProjectDataContext";
 
+/**
+ * ダッシュボードの内部レイアウト。
+ * ProjectDataContext からデータを取得し、Header / GlobalFilterBar / ViewTabs を配置する。
+ * ローディング・エラー状態の表示もこのコンポーネントが担当する。
+ * @param children - ページコンテンツ（projects または assignees ページ）
+ */
 function DashboardShell({ children }: { children: React.ReactNode }) {
   const {
     loading, error, projectNames, statusOptions, activeStatuses, setActiveStatuses,
@@ -15,10 +21,16 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isAssigneesView = pathname === "/assignees";
 
+  /**
+   * 指定IDの要素までスムーズスクロールする。
+   * GlobalFilterBar の高さ分をオフセットとして考慮する。
+   * @param elementId - スクロール先のDOM要素ID
+   */
   const scrollToElement = (elementId: string) => {
     const target = document.getElementById(elementId);
     if (!target) return;
 
+    // sticky なフィルターバーに隠れないよう、その高さ+余白分だけオフセットする
     const filterBar = document.querySelector<HTMLElement>(
       '[data-component="GlobalFilterBar"]',
     );
@@ -27,11 +39,20 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
     window.scrollTo({ top, behavior: "smooth" });
   };
 
+  /**
+   * プロジェクト名選択時にそのセクションまでスクロールする。
+   * @param projectName - 選択されたプロジェクト名
+   */
   const handleProjectSelect = (projectName: string | null) => {
     if (!projectName) return;
+    // DOM id は小文字・ハイフン区切りに正規化されている
     scrollToElement(`project-${projectName.toLowerCase().replace(/\s+/g, "-")}`);
   };
 
+  /**
+   * 担当者ID選択時にそのセクションまでスクロールする。
+   * @param assigneeId - 選択された担当者ID（文字列形式）
+   */
   const handleAssigneeSelect = (assigneeId: string) => {
     scrollToElement(`assignee-${assigneeId}`);
   };
@@ -81,7 +102,9 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
         hasUnassigned={filteredAssigneeOptions.hasUnassigned && activeAssignees.has("unassigned")}
         onAssigneeSelect={handleAssigneeSelect}
       />
+      {/* プロジェクトビュー/担当者ビューの切り替えタブ */}
       <ViewTabs />
+      {/* 担当者ビューではサイドバーを表示、プロジェクトビューではサイドバーなし */}
       {isAssigneesView ? (
         <div className="flex flex-1">
           <AssigneeSidebar
@@ -99,6 +122,11 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+/**
+ * ダッシュボード用レイアウト。
+ * ProjectDataProvider でデータコンテキストを提供し、DashboardShell で共通UIを描画する。
+ * @param children - ページコンテンツ
+ */
 export default function DashboardLayout({
   children,
 }: {

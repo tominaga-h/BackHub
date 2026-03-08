@@ -33,11 +33,21 @@ const COLUMNS: readonly ColumnDef[] = [
   { key: "remarks", label: "備考", width: "w-[300px]" },
 ] as const;
 
+/**
+ * ISO 8601形式の日付文字列を "YYYY/MM/DD" 形式にフォーマットする。
+ * @param iso - ISO 8601形式の日付文字列
+ * @returns "YYYY/MM/DD" 形式の文字列
+ */
 function formatDate(iso: string): string {
   const d = new Date(iso);
   return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}`;
 }
 
+/**
+ * 指定した色を背景色とするラベルバッジ。ステータスや課題種別の表示に使用する。
+ * @param name - バッジに表示するテキスト
+ * @param color - 背景色（CSS color値）
+ */
 function ColorBadge({ name, color }: { name: string; color: string }) {
   return (
     <span
@@ -57,6 +67,15 @@ type ProjectSectionProps = {
   onRemarksChange?: (issueId: string, remarks: string) => void;
 };
 
+/**
+ * プロジェクトビューにおける1プロジェクト分のセクション。
+ * プロジェクトアイコン・名前をヘッダーに表示し、課題をテーブルで一覧する。
+ * プロジェクト固有フィルター適用、カラムソート、備考インライン編集に対応する。
+ * @param project - プロジェクトデータ（課題一覧・設定を含む）
+ * @param onOpenSettings - 設定サイドバーを開くコールバック
+ * @param projectFilters - 適用中のプロジェクト固有フィルター
+ * @param onRemarksChange - 備考変更時のコールバック
+ */
 export function ProjectSection({
   project,
   onOpenSettings,
@@ -66,8 +85,14 @@ export function ProjectSection({
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [editingIssueId, setEditingIssueId] = useState<string | null>(null);
+  /** ローカルで編集された備考のキャッシュ（issueId → テキスト） */
   const [remarksMap, setRemarksMap] = useState<Record<string, string>>({});
 
+  /**
+   * カラムヘッダークリック時のソート切り替え。
+   * 同じカラムをクリックすると昇順/降順をトグル、別カラムなら昇順にリセットする。
+   * @param key - ソート対象のカラムキー
+   */
   const handleSort = useCallback(
     (key: SortKey) => {
       if (sortKey === key) {
@@ -80,14 +105,17 @@ export function ProjectSection({
     [sortKey],
   );
 
+  /** プロジェクト固有フィルターを適用した課題一覧 */
   const filteredIssues = useMemo(() => {
     return project.issues.filter((issue) => {
       if (!projectFilters) return true;
       const statusMatch = projectFilters.statuses.has(issue.status);
+      // 担当者未設定の課題はフィルターに関係なく表示する
       const assigneeMatch = issue.assignee
         ? projectFilters.assignees.has(issue.assignee.name)
         : true;
       const typeMatch = projectFilters.issueTypes.has(issue.issueType);
+      // マイルストーン未設定の課題は UNSET_MILESTONE の選択状態で判定
       const milestoneMatch =
         issue.milestones.length === 0
           ? projectFilters.milestones.has(UNSET_MILESTONE)
@@ -96,9 +124,11 @@ export function ProjectSection({
     });
   }, [project.issues, projectFilters]);
 
+  /** ソートキーに基づいてフィルター済み課題を並び替えた配列 */
   const sortedIssues = useMemo(() => {
     if (!sortKey) return filteredIssues;
 
+    // 各課題からソート対象の文字列値を取得するヘルパー
     const getValue = (issue: Issue): string => {
       switch (sortKey) {
         case "assignee":
@@ -126,6 +156,7 @@ export function ProjectSection({
     });
   }, [filteredIssues, sortKey, sortDirection]);
 
+  /** ステータス名 → 色のルックアップマップ（プロジェクト設定から構築） */
   const statusColorMap = useMemo(() => {
     const map = new Map<string, string>();
     project.settings.statuses.forEach((s) => map.set(s.name, s.color));

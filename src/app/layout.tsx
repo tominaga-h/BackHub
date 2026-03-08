@@ -14,6 +14,11 @@ export const metadata: Metadata = {
     "複数プロジェクトにまたがるBacklogの課題を1画面で横断的に一覧・管理するWebサービス",
 };
 
+/**
+ * アプリケーション全体のルートレイアウト。
+ * Inter フォントの適用と TooltipProvider の提供を行う。
+ * @param children - ページコンテンツ
+ */
 export default function RootLayout({
   children,
 }: Readonly<{
