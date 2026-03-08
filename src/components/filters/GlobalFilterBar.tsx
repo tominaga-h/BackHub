@@ -199,7 +199,7 @@ export function GlobalFilterBar({
                   <Link
                     key={tab.href}
                     href={tab.href}
-                    className={`inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-2 font-medium transition-colors min-w-100 ${
+                    className={`inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-2 font-medium transition-colors min-w-50 ${
                       isActive
                         ? "border border-backhub text-backhub font-bold text-sm"
                         : "bg-gray-100 text-gray-600 hover:bg-gray-300 text-sm"
