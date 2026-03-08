@@ -1,0 +1,30 @@
+{
+  "cli_version": "0.5.0",
+  "checkpoint_id": "8fcc5a7609a6",
+  "session_id": "45ed4b5e-65ac-4277-a0bb-2eb8b631fc89",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-08T11:05:11.475531Z",
+  "branch": "develop",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "src/app/(dashboard)/layout.tsx",
+    "src/app/(dashboard)/projects/page.tsx",
+    "src/components/filters/GlobalFilterBar.tsx",
+    "src/components/issues/ProjectSection.tsx"
+  ],
+  "agent": "Cursor",
+  "model": "claude-4.6-opus-high-thinking",
+  "turn_id": "75181839be67",
+  "session_metrics": {
+    "turn_count": 2
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-08T11:05:11.430551Z",
+    "agent_lines": 143,
+    "human_added": 0,
+    "human_modified": 1,
+    "human_removed": 0,
+    "total_committed": 144,
+    "agent_percentage": 99.30555555555556
+  }
+}

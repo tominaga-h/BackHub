@@ -1,0 +1,10 @@
+@src/components/filters/GlobalFilterBar.tsx 
+`/projects` 画面にも HUMAN フィルターを追加してほしい。
+/asignees` 画面と同じ形で、クリックしたら課題一覧から当該ユーザーの課題が非表示になる。
+フィルターの順番は Grouped By > Project > Human > Status
+
+---
+
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.
