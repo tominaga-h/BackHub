@@ -4,6 +4,10 @@ import {
   getBacklogHost,
   getProjectKeys,
 } from "@/lib/backlog-client";
+import {
+  fetchRawProjectData,
+  type RawProjectData,
+} from "@/lib/backlog-fetcher";
 import type { Project, Assignee, Issue, Status } from "@/types";
 
 const AVATAR_COLORS = [
@@ -29,108 +33,19 @@ function toAssignee(user: { id: number; name: string }): Assignee {
   return { id: user.id, name, initials, avatarColor, avatarUrl };
 }
 
-async function fetchUserIconAsDataUri(
-  host: string,
-  apiKey: string,
-  userId: number,
-): Promise<{ id: number; dataUri: string }> {
-  const url = `https://${host}/api/v2/users/${userId}/icon?apiKey=${apiKey}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const contentType = res.headers.get("content-type") ?? "image/png";
-  const buf = Buffer.from(await res.arrayBuffer());
-  return { id: userId, dataUri: `data:${contentType};base64,${buf.toString("base64")}` };
-}
-
-async function fetchIconsBatched(
-  host: string,
-  apiKey: string,
-  userIds: number[],
-  concurrency: number = 5,
-): Promise<Map<number, string>> {
-  const iconMap = new Map<number, string>();
-  for (let i = 0; i < userIds.length; i += concurrency) {
-    const batch = userIds.slice(i, i + concurrency);
-    const results = await Promise.allSettled(
-      batch.map((id) => fetchUserIconAsDataUri(host, apiKey, id)),
-    );
-    for (const result of results) {
-      if (result.status === "fulfilled") {
-        iconMap.set(result.value.id, result.value.dataUri);
-      }
-    }
-  }
-  return iconMap;
-}
-
-function applyIcons(projects: Project[], iconMap: Map<number, string>) {
-  for (const project of projects) {
-    for (const issue of project.issues) {
-      if (issue.assignee && iconMap.has(issue.assignee.id)) {
-        issue.assignee.avatarUrl = iconMap.get(issue.assignee.id);
-      }
-    }
-    for (const assignee of project.settings.assignees) {
-      if (iconMap.has(assignee.id)) {
-        assignee.avatarUrl = iconMap.get(assignee.id);
-      }
-    }
-  }
-}
-
-async function fetchProjectIcon(
-  host: string,
-  apiKey: string,
-  projectIdOrKey: string | number,
-): Promise<string | undefined> {
-  try {
-    const url = `https://${host}/api/v2/projects/${projectIdOrKey}/image?apiKey=${apiKey}`;
-    const res = await fetch(url);
-    if (!res.ok) return undefined;
-    const contentType = res.headers.get("content-type") ?? "image/png";
-    const buf = Buffer.from(await res.arrayBuffer());
-    return `data:${contentType};base64,${buf.toString("base64")}`;
-  } catch {
-    return undefined;
-  }
-}
-
-async function fetchProjectData(
-  backlog: ReturnType<typeof createBacklogClient>,
-  host: string,
-  apiKey: string,
-  projectKey: string,
-  createdSince: string,
-): Promise<Project> {
-  const projectInfo = await backlog.getProject(projectKey);
-
-  const [statuses, issueTypes, versions, users, issues, icon] = await Promise.all([
-    backlog.getProjectStatuses(projectKey),
-    backlog.getIssueTypes(projectKey),
-    backlog.getVersions(projectKey),
-    backlog.getProjectUsers(projectKey),
-    backlog.getIssues({
-      projectId: [projectInfo.id],
-      count: 100,
-      sort: "updated",
-      order: "desc",
-      createdSince,
-    }),
-    fetchProjectIcon(host, apiKey, projectKey),
-  ]);
-
+function mapRawToProject(raw: RawProjectData, host: string): Project {
   const assigneeMap = new Map<number, Assignee>();
-  for (const u of users) {
+  for (const u of raw.users) {
     assigneeMap.set(u.id, toAssignee(u));
   }
 
-  const mappedStatuses: Status[] = statuses.map((s) => ({
+  const mappedStatuses: Status[] = raw.statuses.map((s) => ({
     id: s.id,
     name: s.name,
     color: s.color,
   }));
 
-  const mappedIssues: Issue[] = issues.map((issue) => ({
+  const mappedIssues: Issue[] = raw.issues.map((issue) => ({
     id: issue.issueKey,
     title: issue.summary,
     assignee: issue.assignee
@@ -140,7 +55,7 @@ async function fetchProjectData(
     statusColor: issue.status.color,
     issueType: issue.issueType.name,
     issueTypeColor: issue.issueType.color,
-    milestones: (issue.milestone ?? []).map((m: { name: string }) => m.name),
+    milestones: (issue.milestone ?? []).map((m) => m.name),
     priority: issue.priority.name,
     remarks: "",
     url: `https://${host}/view/${issue.issueKey}`,
@@ -149,20 +64,20 @@ async function fetchProjectData(
   }));
 
   return {
-    id: String(projectInfo.id),
-    projectKey: projectInfo.projectKey,
-    name: projectInfo.name,
-    icon,
+    id: String(raw.project.id),
+    projectKey: raw.project.projectKey,
+    name: raw.project.name,
+    icon: raw.icon,
     issues: mappedIssues,
     settings: {
       statuses: mappedStatuses,
       assignees: Array.from(assigneeMap.values()),
-      issueTypes: issueTypes.map((t) => ({
+      issueTypes: raw.issueTypes.map((t) => ({
         id: t.id,
         name: t.name,
         color: t.color,
       })),
-      milestones: versions.map((v) => ({
+      milestones: raw.versions.map((v) => ({
         id: v.id,
         name: v.name,
         archived: v.archived,
@@ -185,7 +100,7 @@ export async function GET() {
 
     const results = await Promise.allSettled(
       projectKeys.map((key) =>
-        fetchProjectData(backlog, host, apiKey, key, createdSince),
+        fetchRawProjectData(backlog, host, apiKey, key, createdSince),
       ),
     );
 
@@ -195,25 +110,13 @@ export async function GET() {
     for (let i = 0; i < results.length; i++) {
       const result = results[i];
       if (result.status === "fulfilled") {
-        projects.push(result.value);
+        projects.push(mapRawToProject(result.value, host));
       } else {
         const key = projectKeys[i];
         console.error(`Failed to fetch project ${key}:`, result.reason);
         errors.push(`${key}: ${result.reason?.message ?? "Unknown error"}`);
       }
     }
-
-    // TODO: 429エラー回避のため一時的にアイコン取得を無効化
-    // const uniqueUserIds = new Set<number>();
-    // for (const p of projects) {
-    //   for (const a of p.settings.assignees) uniqueUserIds.add(a.id);
-    //   for (const i of p.issues) {
-    //     if (i.assignee) uniqueUserIds.add(i.assignee.id);
-    //   }
-    // }
-
-    // const iconMap = await fetchIconsBatched(host, apiKey, Array.from(uniqueUserIds));
-    // applyIcons(projects, iconMap);
 
     return NextResponse.json({ projects, errors });
   } catch (error) {
