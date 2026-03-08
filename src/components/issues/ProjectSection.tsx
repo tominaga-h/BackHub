@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useRef } from "react";
 import {
   Settings,
   ArrowUpDown,
@@ -64,6 +64,8 @@ type ProjectSectionProps = {
   project: Project;
   onOpenSettings: (projectId: string) => void;
   projectFilters?: ProjectFilters;
+  /** グローバル Human フィルターで選択中の担当者 ID の Set（省略時はフィルタリングしない） */
+  globalActiveAssignees?: Set<string>;
   onRemarksChange?: (issueId: string, remarks: string) => void;
 };
 
@@ -74,12 +76,14 @@ type ProjectSectionProps = {
  * @param project - プロジェクトデータ（課題一覧・設定を含む）
  * @param onOpenSettings - 設定サイドバーを開くコールバック
  * @param projectFilters - 適用中のプロジェクト固有フィルター
+ * @param globalActiveAssignees - グローバル Human フィルターで選択中の担当者 ID の Set
  * @param onRemarksChange - 備考変更時のコールバック
  */
 export function ProjectSection({
   project,
   onOpenSettings,
   projectFilters,
+  globalActiveAssignees,
   onRemarksChange,
 }: ProjectSectionProps) {
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
@@ -87,6 +91,8 @@ export function ProjectSection({
   const [editingIssueId, setEditingIssueId] = useState<string | null>(null);
   /** ローカルで編集された備考のキャッシュ（issueId → テキスト） */
   const [remarksMap, setRemarksMap] = useState<Record<string, string>>({});
+  /** Escape 押下時に onBlur での保存をスキップするためのフラグ */
+  const cancelledRef = useRef(false);
 
   /**
    * カラムヘッダークリック時のソート切り替え。
@@ -105,12 +111,19 @@ export function ProjectSection({
     [sortKey],
   );
 
-  /** プロジェクト固有フィルターを適用した課題一覧 */
+  /** プロジェクト固有フィルター＋グローバル Human フィルターを適用した課題一覧 */
   const filteredIssues = useMemo(() => {
     return project.issues.filter((issue) => {
+      // グローバル Human フィルターによる担当者絞り込み
+      if (globalActiveAssignees && globalActiveAssignees.size > 0) {
+        const humanMatch = issue.assignee
+          ? globalActiveAssignees.has(issue.assignee.id.toString())
+          : globalActiveAssignees.has("unassigned");
+        if (!humanMatch) return false;
+      }
       if (!projectFilters) return true;
       const statusMatch = projectFilters.statuses.has(issue.status);
-      // 担当者未設定の課題はフィルターに関係なく表示する
+      // 担当者未設定の課題はプロジェクト固有フィルターに関係なく表示する
       const assigneeMatch = issue.assignee
         ? projectFilters.assignees.has(issue.assignee.name)
         : true;
@@ -122,7 +135,7 @@ export function ProjectSection({
           : issue.milestones.some((m) => projectFilters.milestones.has(m));
       return statusMatch && assigneeMatch && typeMatch && milestoneMatch;
     });
-  }, [project.issues, projectFilters]);
+  }, [project.issues, projectFilters, globalActiveAssignees]);
 
   /** ソートキーに基づいてフィルター済み課題を並び替えた配列 */
   const sortedIssues = useMemo(() => {
@@ -306,8 +319,19 @@ export function ProjectSection({
                             setEditingIssueId(null);
                           }
                           if (e.key === "Escape") {
+                            cancelledRef.current = true;
                             setEditingIssueId(null);
                           }
+                        }}
+                        onBlur={(e) => {
+                          if (cancelledRef.current) {
+                            cancelledRef.current = false;
+                            return;
+                          }
+                          const value = e.currentTarget.value;
+                          setRemarksMap((prev) => ({ ...prev, [issue.id]: value }));
+                          onRemarksChange?.(issue.id, value);
+                          setEditingIssueId(null);
                         }}
                       />
                     ) : (

@@ -11,7 +11,7 @@ import type { Assignee, IssueWithProject } from "@/types";
  * 全プロジェクトの課題を担当者ごとにグルーピングして表示する。
  */
 export default function AssigneesPage() {
-  const { projects, activeStatuses, statusColorMap, activeAssignees } = useProjectData();
+  const { projects, activeStatuses, activeProjects, statusColorMap, activeAssignees } = useProjectData();
 
   // 全プロジェクトの課題を担当者ごとにグルーピングし、担当者名でソート
   const groupedByAssignee = useMemo(() => {
@@ -20,7 +20,9 @@ export default function AssigneesPage() {
       { assignee: Assignee | null; issues: IssueWithProject[] }
     >();
 
-    projects.forEach((project) => {
+    projects
+      .filter((project) => activeProjects.has(project.name))
+      .forEach((project) => {
       project.issues
         // グローバルステータスフィルターを適用
         .filter((issue) => activeStatuses.has(issue.status))
@@ -45,7 +47,7 @@ export default function AssigneesPage() {
       if (!b.assignee) return -1;
       return a.assignee.name.localeCompare(b.assignee.name, "ja");
     });
-  }, [projects, activeStatuses]);
+  }, [projects, activeStatuses, activeProjects]);
 
   // サイドバーで選択された担当者のみを表示対象にする
   const visibleGroups = useMemo(
@@ -69,8 +71,21 @@ export default function AssigneesPage() {
    * @param remarks - 新しい備考テキスト
    */
   const handleRemarksChange = (issueId: string, remarks: string) => {
-    // TODO: Supabase 導入後に DB 保存処理に置き換え
-    console.log("remarks changed:", issueId, remarks);
+    // issueId は issue_key（例: "PROJ-123"）
+    fetch("/api/issues/remarks", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ issueKey: issueId, content: remarks }),
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          console.error("Failed to save remarks:", res.status, data);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to save remarks (network):", err);
+      });
   };
 
   return (

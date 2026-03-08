@@ -58,7 +58,7 @@ function matchesProjectFilters(
  * 各プロジェクトのセクションを一覧表示し、プロジェクト固有フィルターのサイドバーを提供する。
  */
 export default function ProjectsPage() {
-  const { projects, activeStatuses } = useProjectData();
+  const { projects, activeStatuses, activeAssignees } = useProjectData();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   /** プロジェクトIDごとの個別フィルター状態を管理 */
@@ -104,12 +104,20 @@ export default function ProjectsPage() {
         const pf = filtersMap[p.id];
         return (
           sum +
-          p.issues.filter(
-            (i) => !pf || matchesProjectFilters(i, pf),
-          ).length
+          p.issues.filter((i) => {
+            if (pf && !matchesProjectFilters(i, pf)) return false;
+            // グローバル Human フィルターによる担当者絞り込み
+            if (activeAssignees.size > 0) {
+              const humanMatch = i.assignee
+                ? activeAssignees.has(i.assignee.id.toString())
+                : activeAssignees.has("unassigned");
+              if (!humanMatch) return false;
+            }
+            return true;
+          }).length
         );
       }, 0),
-    [projects, filtersMap],
+    [projects, filtersMap, activeAssignees],
   );
 
   /**
@@ -139,8 +147,21 @@ export default function ProjectsPage() {
    * @param remarks - 新しい備考テキスト
    */
   const handleRemarksChange = (issueId: string, remarks: string) => {
-    // TODO: Supabase 導入後に DB 保存処理に置き換え
-    console.log("remarks changed:", issueId, remarks);
+    // issueId は issue_key（例: "PROJ-123"）
+    fetch("/api/issues/remarks", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ issueKey: issueId, content: remarks }),
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          console.error("Failed to save remarks:", res.status, data);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to save remarks (network):", err);
+      });
   };
 
   return (
@@ -152,6 +173,7 @@ export default function ProjectsPage() {
             project={project}
             onOpenSettings={handleOpenSettings}
             projectFilters={filtersMap[project.id]}
+            globalActiveAssignees={activeAssignees}
             onRemarksChange={handleRemarksChange}
           />
         ))}
