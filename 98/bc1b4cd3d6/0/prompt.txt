@@ -1,0 +1,15 @@
+@src/components/filters/GlobalFilterBar.tsx 
+Grouped ByやProjectなどのフィルタータイトルをコンポーネント化して
+
+---
+
+@src/components/filters/GlobalFilterBar.tsx 
+デザインを少し変えたい。
+今はフィルタータイトルを含め、フィルターの各値が一つのdivで囲まれており、フィルターの値が改行されると、タイトルである「PROJECT」の下にフィルターの値が表示されてしまう。
+私の理想としては、フィルタータイトルとフィルターの値は別のdivで囲み、フィルターの値が折り返されてもフィルタータイトルの下には表示されないようにしたい。添付画像の赤枠部分がちゃんとフィルターの値のエリアに改行されてほしい。
+
+---
+
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.
