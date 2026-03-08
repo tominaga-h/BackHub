@@ -20,16 +20,22 @@ projects:
         title: "Setup database environment for the upcoming enterprise architecture scaling project"
         assignee: *alex
         status: "OPEN"
+        issueType: "Task"
+        issueTypeColor: "#3b82f6"
         remarks: "Awaiting credentials from server admin"
       - id: "ISSUE-102"
         title: "API Integration - Auth Module: Implement OAuth2 with multi-factor authentication and role-based access control"
         assignee: *sam
         status: "IN PROGRESS"
+        issueType: "Bug"
+        issueTypeColor: "#ef4444"
         remarks: "Working on JWT logic and refresh tokens"
       - id: "ISSUE-103"
         title: "API Integration - Auth Module: Implement OAuth2 with multi-factor authentication and role-based access control"
         assignee: *sam
         status: "CLOSED"
+        issueType: "Request"
+        issueTypeColor: "#22c55e"
         remarks: "Working on JWT logic and refresh tokens"
     settings:
       assignees: [*alex, *sam, *jordan]
@@ -52,6 +58,8 @@ projects:
         title: "Mobile responsiveness fixes for the main landing page and secondary navigation menus across all breakpoints"
         assignee: *sam
         status: "CLOSED"
+        issueType: "Bug"
+        issueTypeColor: "#ef4444"
         remarks: "Completed on Friday as requested"
     settings:
       assignees: [*sam, *jordan]
@@ -71,11 +79,15 @@ projects:
         title: "Setup database environment for the upcoming enterprise architecture scaling project"
         assignee: *alex
         status: "OPEN"
+        issueType: "Task"
+        issueTypeColor: "#3b82f6"
         remarks: "Awaiting credentials from server admin"
       - id: "ISSUE-102"
         title: "API Integration - Auth Module: Implement OAuth2 with multi-factor authentication and role-based access control"
         assignee: *sam
         status: "IN PROGRESS"
+        issueType: "Request"
+        issueTypeColor: "#22c55e"
         remarks: "Working on JWT logic and refresh tokens"
     settings:
       assignees: [*alex, *sam, *jordan]
@@ -98,11 +110,15 @@ projects:
         title: "Setup database environment for the upcoming enterprise architecture scaling project"
         assignee: *alex
         status: "OPEN"
+        issueType: "Bug"
+        issueTypeColor: "#ef4444"
         remarks: "Awaiting credentials from server admin"
       - id: "ISSUE-102"
         title: "API Integration - Auth Module: Implement OAuth2 with multi-factor authentication and role-based access control"
         assignee: *sam
         status: "IN PROGRESS"
+        issueType: "Task"
+        issueTypeColor: "#3b82f6"
         remarks: "Working on JWT logic and refresh tokens"
     settings:
       assignees: [*alex, *sam, *jordan]

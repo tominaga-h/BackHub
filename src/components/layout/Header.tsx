@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export function Header() {
   return (
-    <header data-component="Header" className="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-2">
+    <header data-component="Header" className="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4">
       {/* Left: Logo */}
       <div className="flex items-center gap-2.5">
         <div className="flex h-8 w-8 items-center justify-center rounded bg-backhub">
@@ -29,12 +29,6 @@ export function Header() {
 
       {/* Right: Actions + User */}
       <div className="flex items-center gap-4">
-        <button className="relative text-gray-500 hover:text-gray-700">
-          <Bell className="h-5 w-5" />
-          <span className="absolute -right-1 -top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 text-[9px] font-medium text-white">
-            3
-          </span>
-        </button>
         <button className="text-gray-500 hover:text-gray-700">
           <Settings className="h-5 w-5" />
         </button>

@@ -2,17 +2,15 @@
 
 import { useMemo, useState, useCallback } from "react";
 import {
-  Settings,
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
-  LayoutGrid,
+  User,
   Pencil,
 } from "lucide-react";
-import { UNSET_MILESTONE } from "@/types";
-import type { Project, Issue, ProjectFilters } from "@/types";
+import type { Assignee, IssueWithProject } from "@/types";
 
-type SortKey = "id" | "title" | "assignee" | "issueType" | "status" | "created" | "updated" | "milestone" | "remarks";
+type SortKey = "id" | "title" | "project" | "issueType" | "status" | "created" | "updated" | "milestone" | "remarks";
 type SortDirection = "asc" | "desc";
 
 type ColumnDef = {
@@ -22,10 +20,10 @@ type ColumnDef = {
 };
 
 const COLUMNS: readonly ColumnDef[] = [
+  { key: "project", label: "プロジェクト", width: "w-[250px]" },
   { key: "issueType", label: "種別", width: "w-[100px]" },
-  { key: "id", label: "キー", width: "w-[200px]" },
-  { key: "title", label: "件名", width: "w-[800px]" },
-  { key: "assignee", label: "担当者", width: "w-[150px]" },
+  { key: "id", label: "キー", width: "w-[250px]" },
+  { key: "title", label: "件名", width: "w-[500px]" },
   { key: "status", label: "状態", width: "w-[130px]" },
   { key: "created", label: "登録日", width: "w-[130px]" },
   { key: "updated", label: "更新日", width: "w-[130px]" },
@@ -50,19 +48,19 @@ function ColorBadge({ name, color }: { name: string; color: string }) {
   );
 }
 
-type ProjectSectionProps = {
-  project: Project;
-  onOpenSettings: (projectId: string) => void;
-  projectFilters?: ProjectFilters;
+type AssigneeSectionProps = {
+  assignee: Assignee | null;
+  issues: IssueWithProject[];
+  statusColorMap: Map<string, string>;
   onRemarksChange?: (issueId: string, remarks: string) => void;
 };
 
-export function ProjectSection({
-  project,
-  onOpenSettings,
-  projectFilters,
+export function AssigneeSection({
+  assignee,
+  issues,
+  statusColorMap,
   onRemarksChange,
-}: ProjectSectionProps) {
+}: AssigneeSectionProps) {
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [editingIssueId, setEditingIssueId] = useState<string | null>(null);
@@ -80,29 +78,13 @@ export function ProjectSection({
     [sortKey],
   );
 
-  const filteredIssues = useMemo(() => {
-    return project.issues.filter((issue) => {
-      if (!projectFilters) return true;
-      const statusMatch = projectFilters.statuses.has(issue.status);
-      const assigneeMatch = issue.assignee
-        ? projectFilters.assignees.has(issue.assignee.name)
-        : true;
-      const typeMatch = projectFilters.issueTypes.has(issue.issueType);
-      const milestoneMatch =
-        issue.milestones.length === 0
-          ? projectFilters.milestones.has(UNSET_MILESTONE)
-          : issue.milestones.some((m) => projectFilters.milestones.has(m));
-      return statusMatch && assigneeMatch && typeMatch && milestoneMatch;
-    });
-  }, [project.issues, projectFilters]);
-
   const sortedIssues = useMemo(() => {
-    if (!sortKey) return filteredIssues;
+    if (!sortKey) return issues;
 
-    const getValue = (issue: Issue): string => {
+    const getValue = (issue: IssueWithProject): string => {
       switch (sortKey) {
-        case "assignee":
-          return issue.assignee?.name ?? "";
+        case "project":
+          return issue.projectName;
         case "milestone":
           return issue.milestones.join(", ");
         case "id":
@@ -118,54 +100,41 @@ export function ProjectSection({
       }
     };
 
-    return [...filteredIssues].sort((a, b) => {
+    return [...issues].sort((a, b) => {
       const aVal = getValue(a);
       const bVal = getValue(b);
       const cmp = aVal.localeCompare(bVal, "ja");
       return sortDirection === "asc" ? cmp : -cmp;
     });
-  }, [filteredIssues, sortKey, sortDirection]);
+  }, [issues, sortKey, sortDirection]);
 
-  const statusColorMap = useMemo(() => {
-    const map = new Map<string, string>();
-    project.settings.statuses.forEach((s) => map.set(s.name, s.color));
-    return map;
-  }, [project.settings.statuses]);
+  const assigneeLabel = assignee?.name ?? "未割当";
+  const sectionId = `assignee-${assignee?.id ?? "unassigned"}`;
 
   return (
     <div
-      data-component="ProjectSection"
-      id={`project-${project.name.toLowerCase().replace(/\s+/g, "-")}`}
+      data-component="AssigneeSection"
+      id={sectionId}
       className="overflow-clip rounded-lg border border-gray-200 bg-white"
     >
-      {/* Project Header */}
       <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-4 py-3">
         <div className="flex items-center gap-2">
-          {project.icon ? (
+          {assignee?.avatarUrl ? (
             <img
-              src={project.icon}
-              alt={project.name}
-              className="h-5 w-5 rounded object-cover"
+              src={assignee.avatarUrl}
+              alt={assignee.name}
+              className="h-6 w-6 rounded-full object-cover"
             />
           ) : (
-            <LayoutGrid className="h-5 w-5 text-gray-500" />
+            <User className="h-5 w-5 text-gray-500" />
           )}
-          <h2 className="text-base font-bold text-gray-800">{project.name}</h2>
-          <span className="inline-block text-sm text-gray-400 border rounded-lg border-gray-200 px-2 py-1">{filteredIssues.length} {filteredIssues.length > 2 ? "issues" : "issue"}</span>
-        </div>
-        <div className="flex items-center gap-2.5">
-          <button
-            onClick={() => onOpenSettings(project.id)}
-            className="text-gray-400 hover:text-gray-600"
-          >
-            <Settings className="h-5 w-5" />
-          </button>
+          <h2 className="text-base font-bold text-gray-800">{assigneeLabel}</h2>
+          <span className="inline-block text-sm text-gray-400 border rounded-lg border-gray-200 px-2 py-1">{issues.length} {issues.length > 2 ? "issues" : "issue"}</span>
         </div>
       </div>
 
-      {/* Issue Table */}
       <div className="overflow-x-scroll">
-        <table className="w-full min-w-[1560px] table-fixed">
+        <table className="w-full min-w-[1690px] table-fixed">
           <thead>
             <tr className="border-b border-gray-200">
               {COLUMNS.map((col) => {
@@ -210,6 +179,11 @@ export function ProjectSection({
                   onClick={() => window.open(issue.url, "_blank")}
                 >
                   <td className="px-4 py-3">
+                    <span className="truncate text-sm text-gray-700">
+                      {issue.projectName}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
                     <ColorBadge
                       name={issue.issueType}
                       color={issue.issueTypeColor}
@@ -220,25 +194,6 @@ export function ProjectSection({
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-800">
                     {issue.title}
-                  </td>
-                  <td className="px-4 py-3">
-                    {issue.assignee ? (
-                      <div className="flex items-center gap-2">
-                        {issue.assignee.avatarUrl && (
-                          <img
-                            src={issue.assignee.avatarUrl}
-                            alt={issue.assignee.name}
-                            className="hidden h-7 w-7 shrink-0 rounded-full object-cover"
-                            onLoad={(e) => e.currentTarget.classList.remove("hidden")}
-                          />
-                        )}
-                        <span className="truncate text-sm text-gray-700">
-                          {issue.assignee.name}
-                        </span>
-                      </div>
-                    ) : (
-                      <span className="text-sm text-gray-400">Unassigned</span>
-                    )}
                   </td>
                   <td className="px-4 py-3">
                     <ColorBadge

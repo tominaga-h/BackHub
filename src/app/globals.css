@@ -129,3 +129,22 @@
     @apply font-sans;
   }
 }
+
+.overflow-x-scroll::-webkit-scrollbar {
+  height: 8px;
+  -webkit-appearance: none;
+}
+
+.overflow-x-scroll::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.overflow-x-scroll::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.25);
+  border-radius: 4px;
+}
+
+.overflow-x-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.4);
+}
