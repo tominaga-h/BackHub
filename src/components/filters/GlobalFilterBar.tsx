@@ -31,6 +31,16 @@ type GlobalFilterBarProps = {
   assigneeFilterOptions?: Assignee[];
   hasUnassigned?: boolean;
   onAssigneeSelect?: (assigneeId: string) => void;
+  /** Human トグルフィルターを表示するか（プロジェクトビュー用） */
+  showHumanToggleFilter?: boolean;
+  /** トグル対象の担当者リスト */
+  humanToggleOptions?: Assignee[];
+  /** 現在表示対象の担当者 ID の Set */
+  activeHumans?: Set<string>;
+  /** 「未割当」トグルボタンを表示するか */
+  hasUnassignedHuman?: boolean;
+  /** Human トグル変更時のコールバック */
+  onHumanToggleChange?: (humans: Set<string>) => void;
 };
 
 /**
@@ -51,6 +61,11 @@ type GlobalFilterBarProps = {
  * @param assigneeFilterOptions - 担当者ショートカットの選択肢
  * @param hasUnassigned - 「未割当」ショートカットを表示するか
  * @param onAssigneeSelect - 担当者ショートカットクリック時のコールバック
+ * @param showHumanToggleFilter - Human トグルフィルターを表示するか（プロジェクトビュー用）
+ * @param humanToggleOptions - トグル対象の担当者リスト
+ * @param activeHumans - 現在表示対象の担当者 ID の Set
+ * @param hasUnassignedHuman - 「未割当」トグルボタンを表示するか
+ * @param onHumanToggleChange - Human トグル変更時のコールバック
  */
 export function GlobalFilterBar({
   projectNames,
@@ -67,6 +82,11 @@ export function GlobalFilterBar({
   assigneeFilterOptions,
   hasUnassigned,
   onAssigneeSelect,
+  showHumanToggleFilter = false,
+  humanToggleOptions,
+  activeHumans,
+  hasUnassignedHuman,
+  onHumanToggleChange,
 }: GlobalFilterBarProps) {
   const pathname = usePathname();
   const [activeProject, setActiveProject] = useState("All Projects");
@@ -100,11 +120,34 @@ export function GlobalFilterBar({
     onProjectFilterChange(next);
   };
 
+  /**
+   * 担当者トグルボタンの個別トグル。
+   * @param humanId - トグル対象の担当者ID（文字列）
+   */
+  const toggleHuman = (humanId: string) => {
+    if (!activeHumans || !onHumanToggleChange) return;
+    const next = new Set(activeHumans);
+    if (next.has(humanId)) {
+      next.delete(humanId);
+    } else {
+      next.add(humanId);
+    }
+    onHumanToggleChange(next);
+  };
+
   const allProjectsActive =
     !!projectFilterOptions &&
     projectFilterOptions.length > 0 &&
     !!activeProjects &&
     projectFilterOptions.every((p) => activeProjects.has(p));
+
+  /** Human トグルフィルターの全選択状態を判定 */
+  const allHumansActive =
+    !!humanToggleOptions &&
+    humanToggleOptions.length > 0 &&
+    !!activeHumans &&
+    humanToggleOptions.every((a) => activeHumans.has(a.id.toString())) &&
+    (!hasUnassignedHuman || activeHumans.has("unassigned"));
 
   const allStatusesActive =
     statusOptions.length > 0 &&
@@ -202,7 +245,7 @@ export function GlobalFilterBar({
                   <button
                     key={name}
                     onClick={() => toggleProject(name)}
-                    className={`rounded-sm px-3 py-1 text-xs font-medium transition-colors ${
+                    className={`rounded-sm px-3 py-1 text-sm font-medium transition-colors ${
                       isActive
                         ? "bg-backhub font-bold text-white"
                         : "bg-gray-100 text-gray-500"
@@ -214,6 +257,7 @@ export function GlobalFilterBar({
               })}
             </div>
           )}
+          {/* Human Shortcuts（担当者ビュー専用：スクロール用ショートカット） */}
           {showAssigneeFilter && assigneeFilterOptions && (
             <div className="flex flex-wrap items-center gap-1">
               <span className="mr-2 text-xs font-medium uppercase tracking-wider text-gray-500">
@@ -248,6 +292,73 @@ export function GlobalFilterBar({
                   className="inline-flex items-center gap-1.5 rounded-md bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-300"
                 >
                   <User className="h-4 w-4 text-gray-400" />
+                  未割当
+                </button>
+              )}
+            </div>
+          )}
+          {/* Human Toggle Filters（プロジェクトビュー専用：担当者の表示/非表示トグル） */}
+          {showHumanToggleFilter && humanToggleOptions && activeHumans && (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="mr-1 text-xs font-medium uppercase tracking-wider text-gray-500">
+                Human
+              </span>
+              <button
+                onClick={() => {
+                  const all = new Set(humanToggleOptions.map((a) => a.id.toString()));
+                  if (hasUnassignedHuman) all.add("unassigned");
+                  onHumanToggleChange?.(all);
+                }}
+                className={`rounded-sm px-3 py-1 text-xs font-semibold transition-colors ${
+                  allHumansActive
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                }`}
+              >
+                All
+              </button>
+              {humanToggleOptions.map((a) => {
+                const isActive = activeHumans.has(a.id.toString());
+                return (
+                  <button
+                    key={a.id}
+                    onClick={() => toggleHuman(a.id.toString())}
+                    className={`inline-flex items-center gap-1.5 rounded-sm px-3 py-1 text-sm font-medium transition-colors ${
+                      isActive
+                        ? "bg-backhub font-bold text-white"
+                        : "bg-gray-100 text-gray-500"
+                    }`}
+                  >
+                    {a.avatarUrl ? (
+                      <img
+                        src={a.avatarUrl}
+                        alt={a.name}
+                        className="h-5 w-5 rounded-full object-cover"
+                      />
+                    ) : (
+                      <span
+                        className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[9px] font-bold ${
+                          isActive ? "text-white" : "text-white"
+                        }`}
+                        style={{ backgroundColor: a.avatarColor }}
+                      >
+                        {a.initials}
+                      </span>
+                    )}
+                    {a.name}
+                  </button>
+                );
+              })}
+              {hasUnassignedHuman && (
+                <button
+                  onClick={() => toggleHuman("unassigned")}
+                  className={`inline-flex items-center gap-1.5 rounded-sm px-3 py-1 text-xs font-medium transition-colors ${
+                    activeHumans.has("unassigned")
+                      ? "bg-backhub font-bold text-white"
+                      : "bg-gray-100 text-gray-500"
+                  }`}
+                >
+                  <User className={`h-4 w-4 ${activeHumans.has("unassigned") ? "text-white" : "text-gray-400"}`} />
                   未割当
                 </button>
               )}

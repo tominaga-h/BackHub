@@ -106,6 +106,11 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
         assigneeFilterOptions={filteredAssigneeOptions.assignees.filter(a => activeAssignees.has(a.id.toString()))}
         hasUnassigned={filteredAssigneeOptions.hasUnassigned && activeAssignees.has("unassigned")}
         onAssigneeSelect={handleAssigneeSelect}
+        showHumanToggleFilter={!isAssigneesView}
+        humanToggleOptions={filteredAssigneeOptions.assignees}
+        activeHumans={activeAssignees}
+        hasUnassignedHuman={filteredAssigneeOptions.hasUnassigned}
+        onHumanToggleChange={setActiveAssignees}
       />
       {/* 担当者ビューではサイドバーを表示、プロジェクトビューではサイドバーなし */}
       {isAssigneesView ? (
