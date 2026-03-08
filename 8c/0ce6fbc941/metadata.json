@@ -1,0 +1,21 @@
+{
+  "cli_version": "0.5.0",
+  "checkpoint_id": "8c0ce6fbc941",
+  "strategy": "manual-commit",
+  "branch": "develop",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "src/app/(dashboard)/assignees/page.tsx",
+    "src/app/(dashboard)/layout.tsx",
+    "src/components/filters/GlobalFilterBar.tsx",
+    "src/contexts/ProjectDataContext.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/8c/0ce6fbc941/0/metadata.json",
+      "transcript": "/8c/0ce6fbc941/0/full.jsonl",
+      "content_hash": "/8c/0ce6fbc941/0/content_hash.txt",
+      "prompt": "/8c/0ce6fbc941/0/prompt.txt"
+    }
+  ]
+}

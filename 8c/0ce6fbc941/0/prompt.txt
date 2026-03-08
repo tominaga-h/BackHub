@@ -1,0 +1,2 @@
+@src/app/globals.css 
+`bg-backhub-200` のように濃さを変えるためにはどう実装したらいい？
