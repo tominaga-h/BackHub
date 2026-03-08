@@ -160,14 +160,10 @@ async function loadProjectFromDb(
       .map((im) => im.milestones?.name)
       .filter((n): n is string => Boolean(n));
 
-    // issue_remarks は1課題に対して0〜1件を想定（先頭のみ取得）
-    const remarkEntries = issue.issue_remarks as unknown as Array<{
-      content: string;
-    }>;
-    const remarks =
-      Array.isArray(remarkEntries) && remarkEntries.length > 0
-        ? remarkEntries[0].content
-        : "";
+    // issue_remarks は issue_id に UNIQUE 制約があるため、
+    // Supabase は 1対1 リレーションとして単一オブジェクトを返す
+    const remarkEntry = issue.issue_remarks as unknown as { content: string } | null;
+    const remarks = remarkEntry?.content ?? "";
 
     const statusRow = issue.statuses as unknown as {
       name: string;

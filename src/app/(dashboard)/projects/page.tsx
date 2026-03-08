@@ -147,8 +147,21 @@ export default function ProjectsPage() {
    * @param remarks - 新しい備考テキスト
    */
   const handleRemarksChange = (issueId: string, remarks: string) => {
-    // TODO: Supabase 導入後に DB 保存処理に置き換え
-    console.log("remarks changed:", issueId, remarks);
+    // issueId は issue_key（例: "PROJ-123"）
+    fetch("/api/issues/remarks", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ issueKey: issueId, content: remarks }),
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          console.error("Failed to save remarks:", res.status, data);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to save remarks (network):", err);
+      });
   };
 
   return (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useRef } from "react";
 import {
   ArrowUpDown,
   ArrowUp,
@@ -85,6 +85,8 @@ export function AssigneeSection({
   const [editingIssueId, setEditingIssueId] = useState<string | null>(null);
   /** ローカルで編集された備考のキャッシュ（issueId → テキスト） */
   const [remarksMap, setRemarksMap] = useState<Record<string, string>>({});
+  /** Escape 押下時に onBlur での保存をスキップするためのフラグ */
+  const cancelledRef = useRef(false);
 
   /**
    * カラムヘッダークリック時のソート切り替え。
@@ -257,8 +259,19 @@ export function AssigneeSection({
                             setEditingIssueId(null);
                           }
                           if (e.key === "Escape") {
+                            cancelledRef.current = true;
                             setEditingIssueId(null);
                           }
+                        }}
+                        onBlur={(e) => {
+                          if (cancelledRef.current) {
+                            cancelledRef.current = false;
+                            return;
+                          }
+                          const value = e.currentTarget.value;
+                          setRemarksMap((prev) => ({ ...prev, [issue.id]: value }));
+                          onRemarksChange?.(issue.id, value);
+                          setEditingIssueId(null);
                         }}
                       />
                     ) : (
