@@ -1,0 +1,38 @@
+@src/components/filters/GlobalFilterBar.tsx @src/components/layout/ViewTabs.tsx 
+プロジェクトごと、担当者ごとの画面を切り替えるタブをグローバルフィルターの一番上に移動させたい。画面を変えるのに毎回トップに戻らないといけないから。でも画面切り替えであってフィルターではないので、フィルターとして設置するのも疑問がある。どう画面上に配置したらいいかな？
+
+---
+
+挙動を確認したいから、試しに今のヘッダーをstickyにしてみて
+
+---
+
+挙動を確認したいから、試しに今のヘッダーをstickyにしてみて
+
+---
+
+ヘッダーをstickyにするのは微妙だね。
+フィルターバーの一番上に Views というセクションを追加して、「プロジェクトごと」「担当者ごと」の画面に遷移するボタンを配置して
+
+---
+
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.
+
+---
+
+@src/components/filters/GlobalFilterBar.tsx 
+Viewsのタイトルの下にborderを付けて。Filtersの下にも同じくborderを付けてください。
+またViewsの「プロジェクトごと」「担当者ごと」はViewsタイトルの下に配置してください。
+
+---
+
+@src/components/filters/GlobalFilterBar.tsx 
+Viewsセクションを削除、Filtersセクションのみにして、Filtersの一番上に Grouped By という行を追加する。そこにプロジェクトと担当者というボタンがあり、それぞれの画面に遷移するようにしたい。
+
+---
+
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.

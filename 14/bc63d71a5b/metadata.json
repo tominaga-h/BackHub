@@ -1,0 +1,19 @@
+{
+  "cli_version": "0.5.0",
+  "checkpoint_id": "14bc63d71a5b",
+  "strategy": "manual-commit",
+  "branch": "develop",
+  "checkpoints_count": 6,
+  "files_touched": [
+    "src/app/(dashboard)/layout.tsx",
+    "src/components/filters/GlobalFilterBar.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/14/bc63d71a5b/0/metadata.json",
+      "transcript": "/14/bc63d71a5b/0/full.jsonl",
+      "content_hash": "/14/bc63d71a5b/0/content_hash.txt",
+      "prompt": "/14/bc63d71a5b/0/prompt.txt"
+    }
+  ]
+}
