@@ -9,6 +9,7 @@ export type SyncResult = {
   memberCount: number;
   status: "success" | "error";
   error?: string;
+  newIssues: { issueKey: string; summary: string }[];
 };
 
 /**
@@ -47,8 +48,9 @@ export async function syncProjectToDatabase(
     // 5. issues → 親課題ID設定 → 中間テーブル（マイルストーン・カテゴリ）
     //    parent_issue_id は課題自体が全件 upsert された後でないと
     //    FK制約で参照先が存在しない可能性があるため、第2パスで設定する
+    let newIssues: { issueKey: string; summary: string }[] = [];
     if (issues.length > 0) {
-      await upsertIssues(db, issues);
+      newIssues = await upsertIssues(db, issues);
       await updateParentIssueIds(db, issues);
       await syncIssueMilestones(db, issues);
       await syncIssueCategories(db, issues);
@@ -59,6 +61,7 @@ export async function syncProjectToDatabase(
       issueCount: issues.length,
       memberCount: users.length,
       status: "success",
+      newIssues,
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
@@ -69,6 +72,7 @@ export async function syncProjectToDatabase(
       memberCount: 0,
       status: "error",
       error: message,
+      newIssues: [],
     };
   }
 }
@@ -264,15 +268,25 @@ async function syncProjectMembers(
 }
 
 /**
- * 課題一覧をDBにupsertする。
+ * 課題一覧をDBにupsertし、今回新規追加された課題の一覧を返す。
+ * upsert 前にDBの既存IDを照会し、存在しなかったものを新規課題として検出する。
  * parent_issue_id はこの時点では null で投入し、updateParentIssueIds で後から設定する。
  * @param db - Supabaseクライアント
  * @param issues - Backlogから取得した課題一覧
+ * @returns 新規追加された課題の issueKey と summary の配列
  */
 async function upsertIssues(
   db: SupabaseClient,
   issues: RawProjectData["issues"],
-) {
+): Promise<{ issueKey: string; summary: string }[]> {
+  // upsert 前に既存IDを照会して、新規追加分を後で特定する
+  const issueIds = issues.map((i) => i.id);
+  const { data: existing } = await db
+    .from("issues")
+    .select("id")
+    .in("id", issueIds);
+  const existingIds = new Set((existing ?? []).map((e) => e.id));
+
   const now = new Date().toISOString();
   // Backlog APIのレスポンス構造（ネストしたオブジェクト）をフラットなDBカラムにマッピング
   const rows: TablesInsert<"issues">[] = issues.map((i) => ({
@@ -302,6 +316,11 @@ async function upsertIssues(
     .from("issues")
     .upsert(rows, { onConflict: "id" });
   if (error) throw new Error(`issues: ${error.message}`);
+
+  // 既存IDに含まれない課題 = 今回新規追加された課題
+  return issues
+    .filter((i) => !existingIds.has(i.id))
+    .map((i) => ({ issueKey: i.issueKey, summary: i.summary }));
 }
 
 /**
