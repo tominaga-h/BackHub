@@ -1,0 +1,39 @@
+設定されているバックログプロジェクトの課題データを更新するAPIエンドポイントを作成して。
+パラメータは以下の通り。
+- days 本日から起算してdays分の日数遡ってデータを取得する。
+- from_date, to_date from_dateからto_dateの期間でデータを取得する。日付の形式はyyyy-mm-dd
+- today 本日更新分を取得する。
+
+---
+
+すでに`/api/backlog/sync` エンドポイントがあるので、それを拡張する形にしてください。
+既存の3ヶ月分取得する実装は、months パラメータという形で残しておいてください。
+
+---
+
+作成日基準か更新日基準かを選べるパラメータも追加して
+
+---
+
+パラメータ無しの場合は400 Bad Requestを返すようにしてください。
+
+---
+
+`/api/backlog/sync` APIのレスポンス(正常時)は
+```
+{
+results: {
+projectKey: string,
+issueCount: n,
+memberCount: n,
+status: string
+}
+}
+```
+となっていますが、resultsのオブジェクトに追加した課題を出力する `newIssues` を増やしてほしい。
+
+---
+
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.
