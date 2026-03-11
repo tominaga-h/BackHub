@@ -2,14 +2,22 @@ import { createServiceClient } from "@/lib/supabase";
 import type { RawProjectData } from "@/lib/backlog-fetcher";
 import type { TablesInsert } from "@/types/database";
 
+/** 同期対象の課題情報（新規追加 or 既存更新を type で区別） */
+export type SyncIssueItem = {
+  type: "new" | "updated";
+  issueKey: string;
+  summary: string;
+};
+
 /** 同期処理の結果を表す型 */
 export type SyncResult = {
   projectKey: string;
-  issueCount: number;
-  memberCount: number;
   status: "success" | "error";
   error?: string;
-  newIssues: { issueKey: string; summary: string }[];
+  data: {
+    count: number;
+    issues: SyncIssueItem[];
+  };
 };
 
 /**
@@ -48,9 +56,9 @@ export async function syncProjectToDatabase(
     // 5. issues → 親課題ID設定 → 中間テーブル（マイルストーン・カテゴリ）
     //    parent_issue_id は課題自体が全件 upsert された後でないと
     //    FK制約で参照先が存在しない可能性があるため、第2パスで設定する
-    let newIssues: { issueKey: string; summary: string }[] = [];
+    let syncedIssues: SyncIssueItem[] = [];
     if (issues.length > 0) {
-      newIssues = await upsertIssues(db, issues);
+      syncedIssues = await upsertIssues(db, issues);
       await updateParentIssueIds(db, issues);
       await syncIssueMilestones(db, issues);
       await syncIssueCategories(db, issues);
@@ -58,21 +66,20 @@ export async function syncProjectToDatabase(
 
     return {
       projectKey: project.projectKey,
-      issueCount: issues.length,
-      memberCount: users.length,
       status: "success",
-      newIssues,
+      data: {
+        count: issues.length,
+        issues: syncedIssues,
+      },
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     console.error(`Sync failed for ${project.projectKey}:`, message);
     return {
       projectKey: project.projectKey,
-      issueCount: 0,
-      memberCount: 0,
       status: "error",
       error: message,
-      newIssues: [],
+      data: { count: 0, issues: [] },
     };
   }
 }
@@ -268,18 +275,18 @@ async function syncProjectMembers(
 }
 
 /**
- * 課題一覧をDBにupsertし、今回新規追加された課題の一覧を返す。
- * upsert 前にDBの既存IDを照会し、存在しなかったものを新規課題として検出する。
+ * 課題一覧をDBにupsertし、新規追加・更新された課題の一覧を返す。
+ * upsert 前にDBの既存IDを照会し、新規 (new) と既存更新 (updated) を区別する。
  * parent_issue_id はこの時点では null で投入し、updateParentIssueIds で後から設定する。
  * @param db - Supabaseクライアント
  * @param issues - Backlogから取得した課題一覧
- * @returns 新規追加された課題の issueKey と summary の配列
+ * @returns 各課題の type("new"|"updated"), issueKey, summary の配列
  */
 async function upsertIssues(
   db: SupabaseClient,
   issues: RawProjectData["issues"],
-): Promise<{ issueKey: string; summary: string }[]> {
-  // upsert 前に既存IDを照会して、新規追加分を後で特定する
+): Promise<SyncIssueItem[]> {
+  // upsert 前に既存IDを照会して、新規追加分と更新分を後で区別する
   const issueIds = issues.map((i) => i.id);
   const { data: existing } = await db
     .from("issues")
@@ -317,10 +324,14 @@ async function upsertIssues(
     .upsert(rows, { onConflict: "id" });
   if (error) throw new Error(`issues: ${error.message}`);
 
-  // 既存IDに含まれない課題 = 今回新規追加された課題
-  return issues
+  // 既存IDの有無で new / updated を区別して返す
+  const newItems: SyncIssueItem[] = issues
     .filter((i) => !existingIds.has(i.id))
-    .map((i) => ({ issueKey: i.issueKey, summary: i.summary }));
+    .map((i) => ({ type: "new" as const, issueKey: i.issueKey, summary: i.summary }));
+  const updatedItems: SyncIssueItem[] = issues
+    .filter((i) => existingIds.has(i.id))
+    .map((i) => ({ type: "updated" as const, issueKey: i.issueKey, summary: i.summary }));
+  return [...newItems, ...updatedItems];
 }
 
 /**

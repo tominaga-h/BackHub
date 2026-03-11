@@ -180,11 +180,9 @@ export async function POST(request: NextRequest) {
         console.error(`Failed to fetch project ${key}:`, fetchResult.reason);
         results.push({
           projectKey: key,
-          issueCount: 0,
-          memberCount: 0,
           status: "error",
           error: fetchResult.reason?.message ?? "Failed to fetch from Backlog API",
-          newIssues: [],
+          data: { count: 0, issues: [] },
         });
       }
     }
