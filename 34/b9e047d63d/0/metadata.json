@@ -1,0 +1,30 @@
+{
+  "cli_version": "0.5.0",
+  "checkpoint_id": "34b9e047d63d",
+  "session_id": "bfef46ec-5136-45f6-9b2d-0bfe5d2acc98",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-11T13:28:02.057531Z",
+  "branch": "develop",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "src/app/api/backlog/sync/route.ts",
+    "src/lib/backlog-sync.ts"
+  ],
+  "agent": "Cursor",
+  "model": "claude-4.6-opus-high-thinking",
+  "turn_id": "b6e3095b85fa",
+  "checkpoint_transcript_start": 30,
+  "transcript_lines_at_start": 30,
+  "session_metrics": {
+    "turn_count": 10
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-11T13:28:01.985672Z",
+    "agent_lines": 31,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 31,
+    "agent_percentage": 100
+  }
+}

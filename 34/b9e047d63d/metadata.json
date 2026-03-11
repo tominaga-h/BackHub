@@ -1,0 +1,19 @@
+{
+  "cli_version": "0.5.0",
+  "checkpoint_id": "34b9e047d63d",
+  "strategy": "manual-commit",
+  "branch": "develop",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "src/app/api/backlog/sync/route.ts",
+    "src/lib/backlog-sync.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/34/b9e047d63d/0/metadata.json",
+      "transcript": "/34/b9e047d63d/0/full.jsonl",
+      "content_hash": "/34/b9e047d63d/0/content_hash.txt",
+      "prompt": "/34/b9e047d63d/0/prompt.txt"
+    }
+  ]
+}
