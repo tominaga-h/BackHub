@@ -1,0 +1,37 @@
+```
+./src/components/ui/badge.tsx:45:9
+Type error: Object literal may only specify known properties, and '"data-component"' does not exist in type 'WithBaseUIEvent<DetailedHTMLProps<HTMLAttributes<HTMLSpanElement>, HTMLSpanElement>> | ((otherProps: WithBaseUIEvent<...>) => WithBaseUIEvent<...>)'.
+
+  43 |     props: mergeProps<"span">(
+  44 |       {
+> 45 |         "data-component": "Badge",
+     |         ^
+  46 |         className: cn(badgeVariants({ variant }), className),
+  47 |       },
+  48 |       props
+Next.js build worker exited with code: 1 and signal: null
+make: *** [build] Error 1
+```
+
+---
+
+```
+./src/components/ui/badge.tsx:45:9
+Type error: Object literal may only specify known properties, and '"data-component"' does not exist in type 'WithBaseUIEvent<DetailedHTMLProps<HTMLAttributes<HTMLSpanElement>, HTMLSpanElement>> | ((otherProps: WithBaseUIEvent<...>) => WithBaseUIEvent<...>)'.
+
+  43 |     props: mergeProps<"span">(
+  44 |       {
+> 45 |         "data-component": "Badge",
+     |         ^
+  46 |         className: cn(badgeVariants({ variant }), className),
+  47 |       },
+  48 |       props
+Next.js build worker exited with code: 1 and signal: null
+make: *** [build] Error 1
+```
+
+---
+
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.

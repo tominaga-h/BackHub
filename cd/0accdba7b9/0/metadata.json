@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.5.0",
+  "checkpoint_id": "cd0accdba7b9",
+  "session_id": "34482473-c630-416d-8381-a50de1a39e0a",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-13T14:21:14.314213Z",
+  "branch": "develop",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "src/components/ui/badge.tsx"
+  ],
+  "agent": "Cursor",
+  "model": "claude-4.6-opus-high-thinking",
+  "turn_id": "4c02c3fadb63",
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-13T14:21:14.261944Z",
+    "agent_lines": 2,
+    "human_added": 5,
+    "human_modified": 1,
+    "human_removed": 0,
+    "total_committed": 8,
+    "agent_percentage": 25
+  }
+}
