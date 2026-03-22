@@ -1,0 +1,29 @@
+{
+  "cli_version": "0.5.0",
+  "checkpoint_id": "239b5b8d475d",
+  "strategy": "manual-commit",
+  "branch": "develop",
+  "checkpoints_count": 3,
+  "files_touched": [
+    ".cursor/plans/supabase_auth_実装_f8421c69.plan.md",
+    "package-lock.json",
+    "package.json",
+    "src/app/auth/callback/route.ts",
+    "src/app/login/page.tsx",
+    "src/components/layout/Header.tsx",
+    "src/lib/supabase.ts",
+    "src/lib/supabase/browser.ts",
+    "src/lib/supabase/middleware.ts",
+    "src/lib/supabase/server.ts",
+    "src/middleware.ts",
+    "supabase/migrations/20260322000000_handle_new_user_trigger.sql"
+  ],
+  "sessions": [
+    {
+      "metadata": "/23/9b5b8d475d/0/metadata.json",
+      "transcript": "/23/9b5b8d475d/0/full.jsonl",
+      "content_hash": "/23/9b5b8d475d/0/content_hash.txt",
+      "prompt": "/23/9b5b8d475d/0/prompt.txt"
+    }
+  ]
+}
