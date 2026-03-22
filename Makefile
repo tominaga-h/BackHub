@@ -20,3 +20,9 @@ clean:
 
 typecheck:
 	npx tsc --noEmit
+
+push:
+	npx supabase db push
+
+list:
+	npx supabase migrations list
