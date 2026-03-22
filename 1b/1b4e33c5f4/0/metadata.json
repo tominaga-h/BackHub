@@ -1,0 +1,36 @@
+{
+  "cli_version": "0.5.0",
+  "checkpoint_id": "1b1b4e33c5f4",
+  "session_id": "4f8db9e8-58d3-43c7-883b-c2cfaa64edb8",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-22T11:20:13.318167Z",
+  "branch": "develop",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "src/app/(dashboard)/layout.tsx",
+    "src/app/api/backlog/projects/route.ts",
+    "src/app/api/backlog/sync-avatars/route.ts",
+    "src/app/api/backlog/sync/route.ts",
+    "src/app/auth/callback/route.ts",
+    "src/app/page.tsx",
+    "src/components/layout/Header.tsx",
+    "src/contexts/ProjectDataContext.tsx",
+    "src/lib/backlog-client.ts",
+    "src/types/database.ts"
+  ],
+  "agent": "Cursor",
+  "model": "claude-opus-4-6",
+  "turn_id": "ebbc914fa0e0",
+  "session_metrics": {
+    "turn_count": 3
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-22T11:20:13.246349Z",
+    "agent_lines": 187,
+    "human_added": 818,
+    "human_modified": 4,
+    "human_removed": 0,
+    "total_committed": 1009,
+    "agent_percentage": 18.533201189296335
+  }
+}

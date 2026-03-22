@@ -1,0 +1,35 @@
+@src/app/settings/page.tsx:252-276 
+このセクションの高さを固定幅にして、スクロールできるようにしてほしい。
+また、このセクションの前に入力フォームを表示して、プロジェクト名やプロジェクトキーで検索できるようにしてほしい。（入力フォームに入力済みの場合は、右にクリアボタンでクリアできるようにしてください）
+
+---
+
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.
+
+---
+
+コンソールエラー
+```
+## Error Type
+Console Error
+
+## Error Message
+Failed to fetch settings
+
+
+    at load (src/app/settings/page.tsx:54:28)
+
+## Code Frame
+  52 |       try {
+  53 |         const res = await fetch("/api/settings");
+> 54 |         if (!res.ok) throw new Error("Failed to fetch settings");
+     |                            ^
+  55 |         const data = await res.json();
+  56 |         setSpaceUrl(data.spaceUrl ?? "");
+  57 |         setApiKey(data.apiKey ?? "");
+
+Next.js version: 16.1.6 (Turbopack)
+
+```
