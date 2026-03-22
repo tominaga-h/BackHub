@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { Search, Settings, LogOut } from "lucide-react";
+import { Search, Settings, LogOut, FolderKanban, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { createClient } from "@/lib/supabase/browser";
@@ -26,6 +26,7 @@ function getInitials(name: string): string {
 export function Header() {
   const [user, setUser] = useState<User | null>(null);
   const router = useRouter();
+  const pathname = usePathname();
   const supabase = createClient();
 
   useEffect(() => {
@@ -60,39 +61,57 @@ export function Header() {
       data-component="Header"
       className="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4"
     >
-      {/* Left: Logo */}
-      <div className="flex items-center gap-2.5">
-        <div className="flex h-8 w-8 items-center justify-center rounded bg-backhub">
-          <img src="/logo.svg" alt="BackHub" width="32" height="32" />
+      {/* Left: Logo・Links */}
+      <div className="flex">
+        {/* Logo */}
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded bg-backhub">
+            <img src="/logo.svg" alt="BackHub" width="32" height="32" />
+          </div>
+          <span className="text-xl font-bold tracking-tight text-gray-800">
+            Back<span className="text-backhub">Hub</span>
+          </span>
         </div>
-        <span className="text-xl font-bold tracking-tight text-gray-800">
-          Back<span className="text-backhub">Hub</span>
-        </span>
-      </div>
-
-      {/* Center: Search */}
-      <div className="relative w-full max-w-sm">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-        <Input
-          type="text"
-          placeholder="Search issues..."
-          className="pl-9 text-sm"
-        />
+        {/* Nav Links */}
+        <nav className="flex items-center gap-1 pl-3">
+          <Link
+            href="/projects"
+            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-colors ${
+              pathname.startsWith("/projects")
+                ? "font-semibold text-backhub"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            <FolderKanban className="h-4 w-4" />
+            Projects
+          </Link>
+          <Link
+            href="/assignees"
+            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-colors ${
+              pathname.startsWith("/assignees")
+                ? "font-semibold text-backhub"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            <Users className="h-4 w-4" />
+            Assignees
+          </Link>
+          <Link
+            href="/settings"
+            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-colors ${
+              pathname.startsWith("/settings")
+                ? "font-semibold text-backhub"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            <Settings className="h-5 w-5" />
+            Settings
+          </Link>
+        </nav>
       </div>
 
       {/* Right: Actions + User */}
       <div className="flex items-center gap-4">
-        <Link href="/settings" className="text-gray-500 hover:text-gray-700" title="設定">
-          <Settings className="h-5 w-5" />
-        </Link>
-        <button
-          onClick={handleSignOut}
-          className="text-gray-500 transition-colors hover:text-gray-700"
-          title="ログアウト"
-        >
-          <LogOut className="h-5 w-5" />
-        </button>
-        <div className="h-6 w-px bg-gray-200" />
         <div className="flex items-center gap-2">
           <Avatar className="h-8 w-8">
             {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}
@@ -106,6 +125,13 @@ export function Header() {
             </p>
           </div>
         </div>
+        <button
+          onClick={handleSignOut}
+          className="text-gray-500 transition-colors hover:text-gray-700"
+          title="ログアウト"
+        >
+          <LogOut className="h-5 w-5" />
+        </button>
       </div>
     </header>
   );
