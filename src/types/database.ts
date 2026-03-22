@@ -395,6 +395,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           backlog_api_key: string | null
+          backlog_space_url: string | null
           created_at: string
           display_name: string
           id: string
@@ -403,6 +404,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           backlog_api_key?: string | null
+          backlog_space_url?: string | null
           created_at?: string
           display_name: string
           id: string
@@ -411,6 +413,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           backlog_api_key?: string | null
+          backlog_space_url?: string | null
           created_at?: string
           display_name?: string
           id?: string
@@ -477,6 +480,35 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      user_project_keys: {
+        Row: {
+          id: string
+          user_id: string
+          project_key: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          project_key: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          project_key?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_project_keys_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       statuses: {
         Row: {

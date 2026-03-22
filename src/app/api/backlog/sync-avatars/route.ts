@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getBacklogHost } from "@/lib/backlog-client";
 import { fetchUserAvatars } from "@/lib/backlog-fetcher";
 import { createServiceClient } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/server";
+import { getUserBacklogSettings } from "@/lib/settings";
 
 /**
  * アバター画像が未取得のメンバーに対して、Backlog APIからアバターを取得しDBを更新するエンドポイント。
@@ -10,9 +12,21 @@ import { createServiceClient } from "@/lib/supabase";
  */
 export async function POST() {
   try {
-    const host = getBacklogHost();
-    const apiKey = process.env.BACKLOG_API_KEY;
-    if (!apiKey) throw new Error("BACKLOG_API_KEY must be set");
+    // 認証チェック & ユーザー設定の取得
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const settings = await getUserBacklogSettings(user.id);
+    const host = getBacklogHost(settings.spaceUrl ?? undefined);
+    const apiKey = settings.apiKey || process.env.BACKLOG_API_KEY;
+    if (!apiKey) throw new Error("Backlog API key is not configured");
 
     const db = createServiceClient();
 

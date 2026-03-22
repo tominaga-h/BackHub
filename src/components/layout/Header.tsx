@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Search, Settings, LogOut } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -81,9 +82,9 @@ export function Header() {
 
       {/* Right: Actions + User */}
       <div className="flex items-center gap-4">
-        <button className="text-gray-500 hover:text-gray-700">
+        <Link href="/settings" className="text-gray-500 hover:text-gray-700" title="設定">
           <Settings className="h-5 w-5" />
-        </button>
+        </Link>
         <button
           onClick={handleSignOut}
           className="text-gray-500 transition-colors hover:text-gray-700"
