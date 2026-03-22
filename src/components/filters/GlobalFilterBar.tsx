@@ -3,7 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowUp, LayoutGrid, SlidersHorizontal, User, Users } from "lucide-react";
+import { ArrowUp, ChevronDown, LayoutGrid, SlidersHorizontal, User, Users } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import type { Assignee } from "@/types";
 
 /**
@@ -105,6 +106,8 @@ export function GlobalFilterBar({
 }: GlobalFilterBarProps) {
   const pathname = usePathname();
   const [activeProject, setActiveProject] = useState("All Projects");
+  /** フィルターコンテンツの開閉状態（デフォルト: 閉じた状態） */
+  const [isOpen, setIsOpen] = useState(false);
 
   /**
    * ステータスボタンの個別トグル。
@@ -171,13 +174,15 @@ export function GlobalFilterBar({
   const tabs = [...projectNames];
 
   return (
+    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
     <div data-component="GlobalFilterBar" className="sticky top-0 z-30 m-4 my-3 rounded-xl bg-white p-3 shadow-md">
       {/* Filters ヘッダー */}
-      <div className="mb-2 flex items-center gap-2 border-b border-gray-200 px-1 pb-2">
+      <div className={`flex items-center gap-2 px-1 ${isOpen ? "mb-2 border-b border-gray-200 pb-2" : ""}`}>
         <SlidersHorizontal className="h-4 w-4 text-backhub" />
-        <span className="text-sm font-semibold tracking-wide text-gray-700">
+        <CollapsibleTrigger className="inline-flex items-center gap-1 text-sm font-semibold tracking-wide text-gray-700 transition-colors hover:text-backhub cursor-pointer">
           Filters
-        </span>
+          <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+        </CollapsibleTrigger>
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           className="ml-auto inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
@@ -186,6 +191,7 @@ export function GlobalFilterBar({
           TOPへ戻る
         </button>
       </div>
+      <CollapsibleContent>
       <div className="px-6 pb-3">
         <div className="flex flex-col gap-y-2">
           {/* Grouped By: 画面切り替えナビゲーション */}
@@ -420,6 +426,8 @@ export function GlobalFilterBar({
           </div>
         </div>
       </div>
+      </CollapsibleContent>
     </div>
+    </Collapsible>
   );
 }

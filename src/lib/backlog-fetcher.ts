@@ -1,5 +1,13 @@
 import type { Backlog, Entity } from "backlog-js";
 
+/** 課題取得時の日付フィルタオプション（Backlog API の getIssues に渡す日付条件） */
+export type IssueFilterOptions = {
+  createdSince?: string;
+  createdUntil?: string;
+  updatedSince?: string;
+  updatedUntil?: string;
+};
+
 /** Backlog APIから取得した1プロジェクト分の生データ一式 */
 export type RawProjectData = {
   project: {
@@ -99,7 +107,7 @@ export async function fetchUserAvatars(
  * @param host - Backlogホスト名
  * @param apiKey - Backlog APIキー
  * @param projectKey - 対象プロジェクトキー（例: "PROJ1"）
- * @param createdSince - 課題の作成日下限（ISO 8601形式、例: "2026-01-01"）
+ * @param issueFilter - 課題取得時の日付フィルタ（createdSince/Until, updatedSince/Until）
  * @returns プロジェクトの全生データ
  */
 export async function fetchRawProjectData(
@@ -107,7 +115,7 @@ export async function fetchRawProjectData(
   host: string,
   apiKey: string,
   projectKey: string,
-  createdSince: string,
+  issueFilter: IssueFilterOptions,
 ): Promise<RawProjectData> {
   const projectInfo = await backlog.getProject(projectKey);
 
@@ -124,7 +132,7 @@ export async function fetchRawProjectData(
         count: 100,           // Backlog APIの1リクエスト上限
         sort: "updated",
         order: "desc",
-        createdSince,
+        ...issueFilter,
       }),
       fetchProjectIcon(host, apiKey, projectKey),
     ]);

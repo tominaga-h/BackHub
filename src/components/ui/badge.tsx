@@ -35,13 +35,15 @@ function Badge({
 }: useRender.ComponentProps<"span"> & VariantProps<typeof badgeVariants>) {
   return useRender({
     defaultTagName: "span",
-    props: mergeProps<"span">(
-      {
-        "data-component": "Badge",
-        className: cn(badgeVariants({ variant }), className),
-      },
-      props
-    ),
+    props: {
+      ...mergeProps<"span">(
+        {
+          className: cn(badgeVariants({ variant }), className),
+        },
+        props
+      ),
+      "data-component": "Badge",
+    },
     render,
     state: {
       slot: "badge",
