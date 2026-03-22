@@ -1,0 +1,144 @@
+設定画面を実装してください。
+デザインはこちらを参考にしてください。
+https://www.figma.com/design/wd5if1oWnq1bEQMAtfyF4Q/Backlog?node-id=5-118&t=eD6rTcEw7w5Hhk68-4 
+ただしコンテンツの言語は日本語にしてください。
+またヘッダは現在のHeader.tsxをそのまま使う形でOK。
+
+設定内容はBacklogのスペースURL、APIキー、そして使用するプロジェクト。
+今までは `.env` で設定していたものを設定画面で設定するようにします。
+設定のDBが現状無いと思うので、DBの追加が必要だと思います。
+
+また、Figmaデザインではフォームの順番がURL、プロジェクト、APIキーとなっているが、URL、APIキー、プロジェクトにしてください。
+
+---
+
+デザインはこちら
+
+---
+
+プロジェクトキーは中間テーブルを作成して、プロジェクトキー1つが1レコードになるようにしてください。
+
+---
+
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.
+
+---
+
+設定画面を、ログインしたら最初に出すようにしてほしい。
+またプロジェクトがなにもない状態の各 `/projects` `/assigns` 画面の表示を修正してください。現在はどちらも「Failed to load data
+
+Failed to fetch」となります。
+
+---
+
+コンソールエラーがでてます。
+1
+```
+## Error Type
+Console Error
+
+## Error Message
+A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <SegmentViewNode type="layout" pagePath="(dashboard...">
+      <SegmentTrieNode>
+      <script>
+      <script>
+      <script>
+      <ClientSegmentRoot Component={function DashboardLayout} slots={{...}} serverProvidedParams={{params:{}, ...}}>
+        <DashboardLayout params={Promise}>
+          <ProjectDataProvider>
+            <DashboardShell>
+              <div data-component="DashboardL..." className="flex min-h...">
+                <Header>
+                  <header data-component="Header" className="flex items...">
+                    <div>
+                    <div className="relative w...">
+                      <Search>
+                      <Input type="text" placeholder="Search iss..." className="pl-9 text-sm">
+                        <Input type="text" data-component="Input" data-slot="input" className="h-8 w-full..." ...>
+                          <FieldControl ref={null} type="text" data-component="Input" data-slot="input" ...>
+                            <input
++                             id="base-ui-_R_2j5rlb_"
+-                             id="base-ui-_R_ad5rlb_"
+                              disabled={false}
+                              name={undefined}
+                              ref={function}
+                              aria-labelledby={undefined}
+                              autoFocus={false}
+                              defaultValue={undefined}
+                              onChange={function onChange}
+                              onFocus={function onFocus}
+                              onBlur={function onBlur}
+                              onKeyDown={function onKeyDown}
+                              type="text"
+                              data-component="Input"
+                              data-slot="input"
+                              placeholder="Search issues..."
+                              className="h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 ..."
+                            >
+                    ...
+                ...
+
+
+
+    at input (<anonymous>:null:null)
+    at Input (src/components/ui/input.tsx:8:5)
+    at Header (src/components/layout/Header.tsx:76:9)
+    at DashboardShell (src/app/(dashboard)/layout.tsx:64:9)
+    at DashboardLayout (src/app/(dashboard)/layout.tsx:145:7)
+
+## Code Frame
+   6 | function Input({ className, type, ...props }: React.ComponentProps<"input">) {
+   7 |   return (
+>  8 |     <InputPrimitive
+     |     ^
+   9 |       type={type}
+  10 |       data-component="Input"
+  11 |       data-slot="input"
+
+Next.js version: 16.1.6 (Turbopack)
+
+```
+2
+```
+## Error Type
+Console Error
+
+## Error Message
+Failed to fetch settings
+
+
+    at load (src/app/settings/page.tsx:51:28)
+
+## Code Frame
+  49 |       try {
+  50 |         const res = await fetch("/api/settings");
+> 51 |         if (!res.ok) throw new Error("Failed to fetch settings");
+     |                            ^
+  52 |         const data = await res.json();
+  53 |         setSpaceUrl(data.spaceUrl ?? "");
+  54 |         setApiKey(data.apiKey ?? "");
+
+Next.js version: 16.1.6 (Turbopack)
+
+```
+
+---
+
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.
