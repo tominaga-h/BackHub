@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.5.0",
+  "checkpoint_id": "51bf4405fe4d",
+  "session_id": "78bbda39-755e-4be2-9df4-424acca8c6aa",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-22T11:46:54.264397Z",
+  "branch": "develop",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "src/components/layout/Header.tsx"
+  ],
+  "agent": "Cursor",
+  "model": "claude-opus-4-6",
+  "turn_id": "ed2cc8b0dbf7",
+  "session_metrics": {
+    "turn_count": 2
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-22T11:46:54.217356Z",
+    "agent_lines": 0,
+    "human_added": 0,
+    "human_modified": 53,
+    "human_removed": 1,
+    "total_committed": 28,
+    "agent_percentage": 0
+  }
+}
