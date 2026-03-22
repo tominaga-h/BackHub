@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.5.0",
+  "checkpoint_id": "0a4e3dd25cde",
+  "session_id": "95fb83a3-0532-4599-87f5-679034e9d5e4",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-22T11:08:52.418049Z",
+  "branch": "develop",
+  "checkpoints_count": 5,
+  "files_touched": [
+    "Makefile"
+  ],
+  "agent": "Cursor",
+  "model": "claude-opus-4-6",
+  "turn_id": "ba0044e8a4a6",
+  "session_metrics": {
+    "turn_count": 6
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-22T11:08:52.299783Z",
+    "agent_lines": 6,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 6,
+    "agent_percentage": 100
+  }
+}
