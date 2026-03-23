@@ -1,6 +1,9 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import Link from "next/link";
+import { Settings } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { GlobalFilterBar } from "@/components/filters/GlobalFilterBar";
 
@@ -15,12 +18,20 @@ import { ProjectDataProvider, useProjectData } from "@/contexts/ProjectDataConte
  */
 function DashboardShell({ children }: { children: React.ReactNode }) {
   const {
-    loading, error, projectNames, statusOptions, activeStatuses, setActiveStatuses,
+    loading, error, needsSetup, projects, projectNames, statusOptions, activeStatuses, setActiveStatuses,
     activeProjects, setActiveProjects,
     filteredAssigneeOptions, activeAssignees, setActiveAssignees,
   } = useProjectData();
   const pathname = usePathname();
+  const router = useRouter();
   const isAssigneesView = pathname === "/assignees";
+
+  // Backlog設定が未構成の場合は設定画面へリダイレクト
+  useEffect(() => {
+    if (!loading && needsSetup) {
+      router.replace("/settings");
+    }
+  }, [loading, needsSetup, router]);
 
   /**
    * 指定IDの要素までスムーズスクロールする。
@@ -58,7 +69,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
     scrollToElement(`assignee-${assigneeId}`);
   };
 
-  if (loading) {
+  if (loading || needsSetup) {
     return (
       <div data-component="DashboardLayout" className="flex min-h-screen flex-col bg-[#f5f7f9]">
         <Header />
@@ -66,7 +77,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
           <div className="text-center">
             <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-backhub" />
             <p className="mt-4 text-sm text-gray-500">
-              Loading projects from Backlog...
+              {needsSetup ? "設定画面へ移動しています..." : "Backlogからプロジェクトを読み込み中..."}
             </p>
           </div>
         </main>
@@ -80,8 +91,39 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
         <Header />
         <main className="flex flex-1 items-center justify-center">
           <div className="text-center">
-            <p className="font-medium text-red-600">Failed to load data</p>
-            <p className="mt-1 text-sm text-gray-500">{error}</p>
+            <p className="font-medium text-red-600">データの読み込みに失敗しました</p>
+            <p className="mt-2 text-sm text-gray-500">{error}</p>
+            <Link
+              href="/settings"
+              className="mt-4 inline-flex items-center gap-2 rounded-md bg-backhub px-4 py-2 text-sm font-medium text-white hover:bg-backhub/90 transition-colors"
+            >
+              <Settings className="h-4 w-4" />
+              設定画面を確認する
+            </Link>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // プロジェクトが0件の場合はエラーではなく案内UIを表示
+  if (projects.length === 0) {
+    return (
+      <div data-component="DashboardLayout" className="flex min-h-screen flex-col bg-[#f5f7f9]">
+        <Header />
+        <main className="flex flex-1 items-center justify-center">
+          <div className="text-center">
+            <p className="font-medium text-gray-700">プロジェクトがありません</p>
+            <p className="mt-2 text-sm text-gray-500">
+              設定画面でBacklogの接続設定を行い、プロジェクトを同期してください。
+            </p>
+            <Link
+              href="/settings"
+              className="mt-4 inline-flex items-center gap-2 rounded-md bg-backhub px-4 py-2 text-sm font-medium text-white hover:bg-backhub/90 transition-colors"
+            >
+              <Settings className="h-4 w-4" />
+              設定画面へ
+            </Link>
           </div>
         </main>
       </div>

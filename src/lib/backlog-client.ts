@@ -1,39 +1,54 @@
 import { Backlog } from "backlog-js";
 
 /**
- * 環境変数からBacklog APIクライアントを生成する。
- * BACKLOG_SPACE_URL と BACKLOG_API_KEY が未設定の場合はエラーをスローする。
+ * Backlog APIクライアントを生成する。
+ * 引数が指定されていればそれを使い、未指定なら環境変数にフォールバックする。
+ * @param spaceUrl - BacklogスペースURL（省略時は BACKLOG_SPACE_URL を参照）
+ * @param apiKey - Backlog APIキー（省略時は BACKLOG_API_KEY を参照）
  * @returns Backlog APIクライアントインスタンス
  */
-export function createBacklogClient(): Backlog {
-  const spaceUrl = process.env.BACKLOG_SPACE_URL;
-  const apiKey = process.env.BACKLOG_API_KEY;
+export function createBacklogClient(
+  spaceUrl?: string,
+  apiKey?: string,
+): Backlog {
+  const resolvedUrl = spaceUrl || process.env.BACKLOG_SPACE_URL;
+  const resolvedKey = apiKey || process.env.BACKLOG_API_KEY;
 
-  if (!spaceUrl || !apiKey) {
-    throw new Error("BACKLOG_SPACE_URL and BACKLOG_API_KEY must be set");
+  if (!resolvedUrl || !resolvedKey) {
+    throw new Error(
+      "Backlog spaceUrl and apiKey are required (via argument or env)",
+    );
   }
 
-  // スペースURLからホスト名のみを抽出（例: "example.backlog.com"）
-  const host = new URL(spaceUrl).hostname;
-  return new Backlog({ host, apiKey });
+  const host = new URL(resolvedUrl).hostname;
+  return new Backlog({ host, apiKey: resolvedKey });
 }
 
 /**
- * 環境変数 BACKLOG_SPACE_URL からBacklogのホスト名を取得する。
+ * BacklogスペースURLからホスト名を取得する。
+ * 引数が指定されていればそれを使い、未指定なら環境変数にフォールバックする。
+ * @param spaceUrl - BacklogスペースURL（省略時は BACKLOG_SPACE_URL を参照）
  * @returns Backlogのホスト名（例: "example.backlog.com"）
  */
-export function getBacklogHost(): string {
-  const spaceUrl = process.env.BACKLOG_SPACE_URL;
-  if (!spaceUrl) throw new Error("BACKLOG_SPACE_URL must be set");
-  return new URL(spaceUrl).hostname;
+export function getBacklogHost(spaceUrl?: string): string {
+  const resolvedUrl = spaceUrl || process.env.BACKLOG_SPACE_URL;
+  if (!resolvedUrl) {
+    throw new Error("Backlog spaceUrl is required (via argument or env)");
+  }
+  return new URL(resolvedUrl).hostname;
 }
 
 /**
- * 環境変数 BACKLOG_PROJECT_KEYS からカンマ区切りのプロジェクトキー一覧を取得する。
+ * 同期対象のプロジェクトキー一覧を取得する。
+ * 引数が指定されていればそれを使い、未指定なら環境変数にフォールバックする。
+ * @param projectKeys - プロジェクトキー配列（省略時は BACKLOG_PROJECT_KEYS を参照）
  * @returns プロジェクトキーの配列（例: ["PROJ1", "PROJ2"]）
  */
-export function getProjectKeys(): string[] {
+export function getProjectKeys(projectKeys?: string[]): string[] {
+  if (projectKeys && projectKeys.length > 0) {
+    return projectKeys;
+  }
   const keys = process.env.BACKLOG_PROJECT_KEYS;
-  if (!keys) throw new Error("BACKLOG_PROJECT_KEYS must be set");
+  if (!keys) throw new Error("Backlog projectKeys are required (via argument or env)");
   return keys.split(",").map((k) => k.trim()).filter(Boolean);
 }

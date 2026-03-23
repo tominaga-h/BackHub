@@ -22,6 +22,8 @@ type ProjectDataContextValue = {
   projects: Project[];
   loading: boolean;
   error: string | null;
+  /** Backlog設定（URL/APIキー/プロジェクト）が未構成の場合 true */
+  needsSetup: boolean;
   activeStatuses: Set<string>;
   setActiveStatuses: (statuses: Set<string>) => void;
   activeProjects: Set<string>;
@@ -59,6 +61,7 @@ export function ProjectDataProvider({ children }: { children: ReactNode }) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [needsSetup, setNeedsSetup] = useState(false);
   const [activeStatuses, setActiveStatuses] = useState<Set<string>>(new Set());
   const [activeProjects, setActiveProjects] = useState<Set<string>>(new Set());
   const [activeAssignees, setActiveAssignees] = useState<Set<string>>(new Set());
@@ -70,7 +73,8 @@ export function ProjectDataProvider({ children }: { children: ReactNode }) {
         if (!res.ok) throw new Error("Failed to fetch");
         return res.json();
       })
-      .then((data: { projects: Project[]; errors?: string[] }) => {
+      .then((data: { projects: Project[]; errors?: string[]; needsSetup?: boolean }) => {
+        setNeedsSetup(data.needsSetup === true);
         setProjects(data.projects);
         // 全プロジェクトのステータスを集約
         const allStatuses = new Set<string>();
@@ -172,6 +176,7 @@ export function ProjectDataProvider({ children }: { children: ReactNode }) {
       projects,
       loading,
       error,
+      needsSetup,
       activeStatuses,
       setActiveStatuses,
       activeProjects,
@@ -184,7 +189,7 @@ export function ProjectDataProvider({ children }: { children: ReactNode }) {
       activeAssignees,
       setActiveAssignees,
     }),
-    [projects, loading, error, activeStatuses, activeProjects, statusOptions, projectNames, statusColorMap, assigneeOptions, filteredAssigneeOptions, activeAssignees],
+    [projects, loading, error, needsSetup, activeStatuses, activeProjects, statusOptions, projectNames, statusColorMap, assigneeOptions, filteredAssigneeOptions, activeAssignees],
   );
 
   return (

@@ -9,6 +9,8 @@ import {
   type IssueFilterOptions,
 } from "@/lib/backlog-fetcher";
 import { syncProjectToDatabase, type SyncResult } from "@/lib/backlog-sync";
+import { createClient } from "@/lib/supabase/server";
+import { getUserBacklogSettings } from "@/lib/settings";
 
 /** リクエストボディの型定義 */
 type SyncRequestBody = {
@@ -139,6 +141,20 @@ function buildIssueFilter(
  */
 export async function POST(request: NextRequest) {
   try {
+    // 認証チェック & ユーザー設定の取得
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // DB保存のユーザー設定を取得し、未設定なら環境変数にフォールバック
+    const settings = await getUserBacklogSettings(user.id);
+
     // リクエストボディの解析（空ボディの場合は空オブジェクトとして扱う）
     let body: SyncRequestBody = {};
     try {
@@ -154,11 +170,16 @@ export async function POST(request: NextRequest) {
     }
     const issueFilter = result.filter;
 
-    const backlog = createBacklogClient();
-    const host = getBacklogHost();
-    const projectKeys = getProjectKeys();
-    const apiKey = process.env.BACKLOG_API_KEY;
-    if (!apiKey) throw new Error("BACKLOG_API_KEY must be set");
+    const backlog = createBacklogClient(
+      settings.spaceUrl ?? undefined,
+      settings.apiKey ?? undefined,
+    );
+    const host = getBacklogHost(settings.spaceUrl ?? undefined);
+    const projectKeys = getProjectKeys(
+      settings.projectKeys.length > 0 ? settings.projectKeys : undefined,
+    );
+    const apiKey = settings.apiKey || process.env.BACKLOG_API_KEY;
+    if (!apiKey) throw new Error("Backlog API key is not configured");
 
     // 全プロジェクトのデータを並行取得（個別の失敗は他に影響しない）
     const fetchResults = await Promise.allSettled(

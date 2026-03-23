@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 import { getBacklogHost } from "@/lib/backlog-client";
+import { createClient } from "@/lib/supabase/server";
+import { getUserBacklogSettings } from "@/lib/settings";
 import type { Project, Assignee, Issue, Status } from "@/types";
 
 /** アバター画像がないメンバーに適用するTailwindカラーパレット（IDで循環割り当て） */
@@ -221,8 +223,26 @@ async function loadProjectFromDb(
  */
 export async function GET() {
   try {
+    // 認証チェック & ユーザー設定の取得
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const settings = await getUserBacklogSettings(user.id);
+
+    // Backlog設定が未完了の場合は空レスポンスに needsSetup フラグを付けて返す
+    if (!settings.spaceUrl || !settings.apiKey || settings.projectKeys.length === 0) {
+      return NextResponse.json({ projects: [], errors: [], needsSetup: true });
+    }
+
     const db = createServiceClient();
-    const host = getBacklogHost();
+    const host = getBacklogHost(settings.spaceUrl);
 
     const { data: projectRows, error: projectsError } = await db
       .from("projects")
