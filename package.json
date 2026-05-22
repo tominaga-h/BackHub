@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "source .env && next dev -H $HOST -p $PORT",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
