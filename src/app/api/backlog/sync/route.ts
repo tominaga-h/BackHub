@@ -152,8 +152,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // DB保存のユーザー設定を取得し、未設定なら環境変数にフォールバック
+    // DB保存のユーザー設定を取得する
     const settings = await getUserBacklogSettings(user.id);
+
+    // ユーザー自身のBacklog設定が未完了なら env にフォールバックせず needsSetup を返す
+    if (!settings.spaceUrl || !settings.apiKey || settings.projectKeys.length === 0) {
+      return NextResponse.json({ results: [], needsSetup: true });
+    }
 
     // リクエストボディの解析（空ボディの場合は空オブジェクトとして扱う）
     let body: SyncRequestBody = {};
@@ -178,7 +183,7 @@ export async function POST(request: NextRequest) {
     const projectKeys = getProjectKeys(
       settings.projectKeys.length > 0 ? settings.projectKeys : undefined,
     );
-    const apiKey = settings.apiKey || process.env.BACKLOG_API_KEY;
+    const apiKey = settings.apiKey;
     if (!apiKey) throw new Error("Backlog API key is not configured");
 
     // 全プロジェクトのデータを並行取得（個別の失敗は他に影響しない）

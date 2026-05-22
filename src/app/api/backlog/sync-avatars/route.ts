@@ -24,8 +24,14 @@ export async function POST() {
     }
 
     const settings = await getUserBacklogSettings(user.id);
+
+    // ユーザー自身のBacklog設定が未完了なら env にフォールバックせず needsSetup を返す
+    if (!settings.spaceUrl || !settings.apiKey || settings.projectKeys.length === 0) {
+      return NextResponse.json({ updated: 0, needsSetup: true });
+    }
+
     const host = getBacklogHost(settings.spaceUrl ?? undefined);
-    const apiKey = settings.apiKey || process.env.BACKLOG_API_KEY;
+    const apiKey = settings.apiKey;
     if (!apiKey) throw new Error("Backlog API key is not configured");
 
     const db = createServiceClient();
