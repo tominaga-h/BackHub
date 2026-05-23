@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Settings } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { GlobalFilterBar } from "@/components/filters/GlobalFilterBar";
+import { SyncProgressList } from "@/components/layout/SyncProgressList";
 
 import { AssigneeSidebar } from "@/components/filters/AssigneeSidebar";
 import { ProjectDataProvider, useProjectData } from "@/contexts/ProjectDataContext";
@@ -18,7 +19,7 @@ import { ProjectDataProvider, useProjectData } from "@/contexts/ProjectDataConte
  */
 function DashboardShell({ children }: { children: React.ReactNode }) {
   const {
-    loading, error, needsSetup, projects, projectNames, statusOptions, activeStatuses, setActiveStatuses,
+    loading, error, needsSetup, syncing, syncItems, unsyncedProjectKeys, projects, projectNames, statusOptions, activeStatuses, setActiveStatuses,
     activeProjects, setActiveProjects,
     filteredAssigneeOptions, activeAssignees, setActiveAssignees,
   } = useProjectData();
@@ -79,6 +80,37 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
             <p className="mt-4 text-sm text-gray-500">
               {needsSetup ? "設定画面へ移動しています..." : "Backlogからプロジェクトを読み込み中..."}
             </p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // 未同期プロジェクトを逐次同期している間は、進捗一覧を表示する。
+  // syncing が立つ前（loading 完了〜同期開始の 1 フレーム）に通常画面が
+  // 一瞬描画されるのを防ぐため、未同期キーが残っている間もこの画面を出す。
+  // projects.length === 0 の案内（下の分岐）より前に置く。
+  if (syncing || unsyncedProjectKeys.length > 0) {
+    const doneCount = syncItems.filter((i) => i.status === "done").length;
+    // 名前解決中で syncItems がまだ空の場合は未同期キー数を総数として使う
+    const totalCount =
+      syncItems.length > 0 ? syncItems.length : unsyncedProjectKeys.length;
+    return (
+      <div data-component="DashboardLayout" className="flex min-h-screen flex-col bg-[#f5f7f9]">
+        <Header />
+        <main className="flex flex-1 items-center justify-center">
+          <div className="w-full max-w-md px-6">
+            <div className="text-center">
+              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-backhub" />
+              <p className="mt-4 text-sm font-medium text-gray-700">
+                プロジェクトを読み込み中... （{doneCount} / {totalCount} 件）
+              </p>
+            </div>
+            {syncItems.length > 0 && (
+              <div className="mt-6 rounded-lg bg-white p-4 shadow-sm">
+                <SyncProgressList items={syncItems} />
+              </div>
+            )}
           </div>
         </main>
       </div>

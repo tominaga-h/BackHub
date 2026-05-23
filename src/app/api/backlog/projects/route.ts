@@ -238,7 +238,12 @@ export async function GET() {
 
     // Backlog設定が未完了の場合は空レスポンスに needsSetup フラグを付けて返す
     if (!settings.spaceUrl || !settings.apiKey || settings.projectKeys.length === 0) {
-      return NextResponse.json({ projects: [], errors: [], needsSetup: true });
+      return NextResponse.json({
+        projects: [],
+        errors: [],
+        needsSetup: true,
+        unsyncedProjectKeys: [],
+      });
     }
 
     const db = createServiceClient();
@@ -253,8 +258,18 @@ export async function GET() {
 
     if (projectsError)
       throw new Error(`projects: ${projectsError.message}`);
+
+    // 設定済みキーのうち projects テーブルに行が無いものを「未同期」とする。
+    // projectRows は上で settings.projectKeys に絞って取得済みなので追加クエリは不要。
+    const syncedKeys = new Set((projectRows ?? []).map((r) => r.project_key));
+    const unsyncedProjectKeys = settings.projectKeys.filter(
+      (key) => !syncedKeys.has(key),
+    );
+
     if (!projectRows || projectRows.length === 0) {
-      return NextResponse.json({ projects: [], errors: [] });
+      // 同期済みプロジェクトが 1 件も無い（新規ユーザーの主経路）。
+      // 未同期キーをフロントへ返し、ダッシュボード側で逐次同期させる。
+      return NextResponse.json({ projects: [], errors: [], unsyncedProjectKeys });
     }
 
     // 全プロジェクトを並行読み込み（個別の失敗は他に影響しない）
@@ -277,7 +292,7 @@ export async function GET() {
       }
     }
 
-    return NextResponse.json({ projects, errors });
+    return NextResponse.json({ projects, errors, unsyncedProjectKeys });
   } catch (error) {
     console.error("Failed to load data from DB:", error);
     return NextResponse.json(
