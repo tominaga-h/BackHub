@@ -12,8 +12,14 @@ import { syncProjectToDatabase, type SyncResult } from "@/lib/backlog-sync";
 import { createClient } from "@/lib/supabase/server";
 import { getUserBacklogSettings } from "@/lib/settings";
 
+// アバター画像の Data URI 化が重く 1プロジェクト 6〜8秒かかるため、
+// Vercel の既定 10 秒では不足する。Hobby プランの上限である 60 秒を明示する。
+export const maxDuration = 60;
+
 /** リクエストボディの型定義 */
 type SyncRequestBody = {
+  /** 指定時はこの 1 プロジェクトのみ同期する（未指定なら設定済み全プロジェクト） */
+  projectKey?: string;
   months?: number;
   days?: number;
   from_date?: string;
@@ -180,9 +186,23 @@ export async function POST(request: NextRequest) {
       settings.apiKey ?? undefined,
     );
     const host = getBacklogHost(settings.spaceUrl ?? undefined);
-    const projectKeys = getProjectKeys(
+    let projectKeys = getProjectKeys(
       settings.projectKeys.length > 0 ? settings.projectKeys : undefined,
     );
+
+    // projectKey 指定時は、ユーザー自身の設定キー（user_project_keys 由来）に
+    // 含まれるかを必ず検証してから 1 プロジェクトに絞る。
+    // 権限境界は env フォールバック後の projectKeys ではなく settings.projectKeys で判定する。
+    if (body.projectKey) {
+      if (!settings.projectKeys.includes(body.projectKey)) {
+        return NextResponse.json(
+          { error: "projectKey is not in user's project keys" },
+          { status: 403 },
+        );
+      }
+      projectKeys = [body.projectKey];
+    }
+
     const apiKey = settings.apiKey;
     if (!apiKey) throw new Error("Backlog API key is not configured");
 
