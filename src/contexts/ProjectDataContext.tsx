@@ -2,9 +2,11 @@
 
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -17,6 +19,33 @@ type FilteredAssigneeOptions = {
   hasUnassigned: boolean;
 };
 
+/** 未同期プロジェクトの同期状態 */
+export type SyncItemStatus = "pending" | "syncing" | "done" | "error";
+
+/** 「読み込み中」画面で 1 プロジェクトの進捗を表す要素 */
+export type SyncItem = {
+  /** プロジェクトキー（例: DSK_DEV） */
+  key: string;
+  /** 表示名（Backlog から解決。取得失敗時は key をフォールバック） */
+  name: string;
+  /** 同期状態 */
+  status: SyncItemStatus;
+};
+
+/** /api/backlog/projects のレスポンス型 */
+type ProjectsResponse = {
+  projects: Project[];
+  errors?: string[];
+  needsSetup?: boolean;
+  unsyncedProjectKeys?: string[];
+};
+
+/** /api/backlog/project-names のレスポンス型 */
+type ProjectNamesResponse = {
+  projects?: { projectKey: string; name: string }[];
+  needsSetup?: boolean;
+};
+
 /** ProjectDataContext が提供する値の型定義 */
 type ProjectDataContextValue = {
   projects: Project[];
@@ -24,6 +53,12 @@ type ProjectDataContextValue = {
   error: string | null;
   /** Backlog設定（URL/APIキー/プロジェクト）が未構成の場合 true */
   needsSetup: boolean;
+  /** 未同期プロジェクトキー（projects テーブルに行が無いキー） */
+  unsyncedProjectKeys: string[];
+  /** 未同期プロジェクトを逐次同期している最中かどうか */
+  syncing: boolean;
+  /** 「読み込み中」画面で表示する各プロジェクトの進捗 */
+  syncItems: SyncItem[];
   activeStatuses: Set<string>;
   setActiveStatuses: (statuses: Set<string>) => void;
   activeProjects: Set<string>;
@@ -62,39 +97,156 @@ export function ProjectDataProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [needsSetup, setNeedsSetup] = useState(false);
+  const [unsyncedProjectKeys, setUnsyncedProjectKeys] = useState<string[]>([]);
+  const [syncing, setSyncing] = useState(false);
+  const [syncItems, setSyncItems] = useState<SyncItem[]>([]);
+  // 逐次同期が実行中かどうかを同期的に判定するためのフラグ。
+  // syncing(state) を effect の依存配列に入れると setSyncing で再実行が走り
+  // 多重起動するため、起動制御は再レンダリングを伴わない ref で行う。
+  const syncRunningRef = useRef(false);
   const [activeStatuses, setActiveStatuses] = useState<Set<string>>(new Set());
   const [activeProjects, setActiveProjects] = useState<Set<string>>(new Set());
   const [activeAssignees, setActiveAssignees] = useState<Set<string>>(new Set());
 
+  /**
+   * /api/backlog/projects からプロジェクトデータを取得し、
+   * projects / needsSetup / unsyncedProjectKeys と初期フィルター状態を更新する。
+   * 初回マウント時と、未同期プロジェクトの同期完了後の再取得の両方から呼ぶ。
+   */
+  const loadProjects = useCallback(async () => {
+    const res = await fetch("/api/backlog/projects");
+    if (!res.ok) throw new Error("Failed to fetch");
+    const data: ProjectsResponse = await res.json();
+
+    setNeedsSetup(data.needsSetup === true);
+    setProjects(data.projects);
+    setUnsyncedProjectKeys(data.unsyncedProjectKeys ?? []);
+
+    // 全プロジェクトのステータスを集約
+    const allStatuses = new Set<string>();
+    const closedNames = new Set<string>();
+    data.projects.forEach((p) =>
+      p.settings.statuses.forEach((s) => {
+        allStatuses.add(s.name);
+        // Backlog のステータス id=4 は「完了（Closed）」を示す
+        // 初期状態では完了ステータスを非表示にする
+        if (s.id === 4) closedNames.add(s.name);
+      }),
+    );
+    closedNames.forEach((name) => allStatuses.delete(name));
+    setActiveStatuses(allStatuses);
+    // 初期状態では全プロジェクトを表示対象にする
+    setActiveProjects(new Set(data.projects.map((p) => p.name)));
+  }, []);
+
   // 初回マウント時にプロジェクトデータを取得し、初期フィルター状態を設定する
   useEffect(() => {
-    fetch("/api/backlog/projects")
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch");
-        return res.json();
-      })
-      .then((data: { projects: Project[]; errors?: string[]; needsSetup?: boolean }) => {
-        setNeedsSetup(data.needsSetup === true);
-        setProjects(data.projects);
-        // 全プロジェクトのステータスを集約
-        const allStatuses = new Set<string>();
-        const closedNames = new Set<string>();
-        data.projects.forEach((p) =>
-          p.settings.statuses.forEach((s) => {
-            allStatuses.add(s.name);
-            // Backlog のステータス id=4 は「完了（Closed）」を示す
-            // 初期状態では完了ステータスを非表示にする
-            if (s.id === 4) closedNames.add(s.name);
-          }),
-        );
-        closedNames.forEach((name) => allStatuses.delete(name));
-        setActiveStatuses(allStatuses);
-        // 初期状態では全プロジェクトを表示対象にする
-        setActiveProjects(new Set(data.projects.map((p) => p.name)));
-      })
-      .catch((err) => setError(err.message))
+    loadProjects()
+      .catch((err) =>
+        setError(err instanceof Error ? err.message : "Failed to fetch"),
+      )
       .finally(() => setLoading(false));
-  }, []);
+  }, [loadProjects]);
+
+  // 未同期プロジェクトを検出したら、1 プロジェクトずつ逐次同期する。
+  // Vercel Hobby の関数上限（60秒）に収めるため、全件並行ではなく直列で実行する。
+  //
+  // 中断（cancelled）方式は採らない。同期処理はサーバー側で完結する副作用であり、
+  // クリーンアップで途中中断すると StrictMode の二重マウントや設定画面からの
+  // クライアント遷移で「実行中フラグだけ立って処理は中断」という状態が残り、
+  // 永遠にローディングが終わらなくなる。一度始めたら最後まで走り切らせる。
+  useEffect(() => {
+    // 初回ロード中・設定未完了・未同期なしのいずれかなら何もしない
+    if (loading || needsSetup || unsyncedProjectKeys.length === 0) {
+      return;
+    }
+    // 既に逐次同期が走っていれば二重起動しない（ref は再レンダリングを伴わない）
+    if (syncRunningRef.current) {
+      return;
+    }
+
+    syncRunningRef.current = true;
+    // この実行で処理するキーを effect 内にキャプチャする（state 変化の影響を受けない）
+    const keysToSync = unsyncedProjectKeys;
+
+    const syncSequentially = async () => {
+      setSyncing(true);
+
+      // 未同期プロジェクトの表示名を Backlog から解決する（key → name マップ）。
+      // 未同期プロジェクトは projects テーブルに行が無く名前を持たないため別途取得する。
+      const nameMap: Record<string, string> = {};
+      try {
+        const res = await fetch("/api/backlog/project-names");
+        if (res.ok) {
+          const data: ProjectNamesResponse = await res.json();
+          (data.projects ?? []).forEach((p) => {
+            nameMap[p.projectKey] = p.name;
+          });
+        }
+      } catch (err) {
+        // 名前解決の失敗は致命的ではない。key をフォールバック表示にする
+        console.error("Failed to resolve project names:", err);
+      }
+
+      // 進捗一覧を「待機中」で初期化する
+      const initialItems: SyncItem[] = keysToSync.map((key) => ({
+        key,
+        name: nameMap[key] ?? key,
+        status: "pending",
+      }));
+      setSyncItems(initialItems);
+
+      // 1 プロジェクトずつ順番に同期する
+      for (const key of keysToSync) {
+        // 対象を「同期中」に更新
+        setSyncItems((items) =>
+          items.map((item) =>
+            item.key === key ? { ...item, status: "syncing" } : item,
+          ),
+        );
+
+        let ok = false;
+        try {
+          const res = await fetch("/api/backlog/sync", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            // 直近 1 ヶ月分の更新課題を取得する
+            body: JSON.stringify({ projectKey: key, days: 30 }),
+          });
+          ok = res.ok;
+          if (!ok) {
+            console.error(`Sync failed for ${key}: HTTP ${res.status}`);
+          }
+        } catch (err) {
+          // 個別の失敗は握りつぶし、残りのプロジェクトの同期を続行する
+          console.error(`Sync failed for ${key}:`, err);
+        }
+
+        // 成否を一覧に反映する
+        setSyncItems((items) =>
+          items.map((item) =>
+            item.key === key
+              ? { ...item, status: ok ? "done" : "error" }
+              : item,
+          ),
+        );
+      }
+
+      // 同期完了後、最新のプロジェクトデータを再取得する。
+      // 成功した分は projects テーブルに行ができ、unsyncedProjectKeys から外れてループが止まる。
+      try {
+        await loadProjects();
+      } catch (err) {
+        console.error("Failed to reload projects after sync:", err);
+      }
+    };
+
+    void syncSequentially().finally(() => {
+      // 成功・失敗いずれでも実行中フラグと UI 状態を必ず戻す
+      syncRunningRef.current = false;
+      setSyncing(false);
+    });
+  }, [unsyncedProjectKeys, needsSetup, loading, loadProjects]);
 
   /** 全プロジェクトのステータスを重複排除した選択肢一覧 */
   const statusOptions = useMemo(() => {
@@ -177,6 +329,9 @@ export function ProjectDataProvider({ children }: { children: ReactNode }) {
       loading,
       error,
       needsSetup,
+      unsyncedProjectKeys,
+      syncing,
+      syncItems,
       activeStatuses,
       setActiveStatuses,
       activeProjects,
@@ -189,7 +344,7 @@ export function ProjectDataProvider({ children }: { children: ReactNode }) {
       activeAssignees,
       setActiveAssignees,
     }),
-    [projects, loading, error, needsSetup, activeStatuses, activeProjects, statusOptions, projectNames, statusColorMap, assigneeOptions, filteredAssigneeOptions, activeAssignees],
+    [projects, loading, error, needsSetup, unsyncedProjectKeys, syncing, syncItems, activeStatuses, activeProjects, statusOptions, projectNames, statusColorMap, assigneeOptions, filteredAssigneeOptions, activeAssignees],
   );
 
   return (
