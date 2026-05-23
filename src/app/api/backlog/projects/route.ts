@@ -247,6 +247,8 @@ export async function GET() {
     const { data: projectRows, error: projectsError } = await db
       .from("projects")
       .select("id, project_key, name, icon_url")
+      // ログインユーザーが設定したプロジェクトキーのみに絞る
+      .in("project_key", settings.projectKeys)
       .order("project_key");
 
     if (projectsError)
