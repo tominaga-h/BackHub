@@ -164,7 +164,12 @@ export function ProjectSection({
     return [...filteredIssues].sort((a, b) => {
       const aVal = getValue(a);
       const bVal = getValue(b);
-      const cmp = aVal.localeCompare(bVal, "ja");
+      // 課題キー(id)は末尾の数字を数値として比較する（"-98" < "-100" を成立させるため id 列のみ numeric を有効化）
+      const cmp = aVal.localeCompare(
+        bVal,
+        "ja",
+        sortKey === "id" ? { numeric: true } : undefined,
+      );
       return sortDirection === "asc" ? cmp : -cmp;
     });
   }, [filteredIssues, sortKey, sortDirection]);
