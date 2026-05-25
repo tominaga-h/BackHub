@@ -69,3 +69,19 @@ API Route では「`server.ts` の `createClient()` で `auth.getUser()` によ�
 - **YAML import**: `next.config.ts` で yaml-loader を Turbopack / webpack 両方に設定済み。`src/lib/mock.yaml` のようにモックデータを YAML で読める。
 - **パスエイリアス**: `@/*` → `src/*`。
 - **UI**: shadcn/ui（style: `base-nova`, baseColor: neutral, lucide アイコン）。プリミティブは `src/components/ui/`、機能別コンポーネントは `filters/` `issues/` `layout/` に分かれる。
+
+<!-- dev-cycle:toolchain start -->
+
+## dev-cycle ツールチェーン定義（自動生成）
+
+このセクションは `/task-dev-cycle` スキルにより自動管理されている。手動編集は可能だが、フォーマット（マーカーとキー名）は変更しないこと。再検出させたい場合はブロックごと削除する。
+
+- `<TEST_CMD>`: ` `（テストフレームワーク未導入。品質ゲートは型チェック+lintで代替）
+- `<BUILD_CMD>`: `make build`
+- `<LINT_CMD>`: `make lint`
+- `<CHECK_CMD>`: `make typecheck`
+- `<VERSION_FILE>`: `package.json`
+- `<VERSION_BUMP_POLICY>`: SemVer 2.0.0 標準（ただし SEMVER 運用は無効）
+- `<SEMVER_ENABLED>`: `false`
+- 検出日: `2026-05-25`
+<!-- dev-cycle:toolchain end -->
