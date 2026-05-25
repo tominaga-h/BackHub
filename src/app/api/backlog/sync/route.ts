@@ -26,6 +26,8 @@ type SyncRequestBody = {
   to_date?: string;
   today?: boolean;
   date_type?: "created" | "updated";
+  /** この日付(yyyy-mm-dd)以降に更新された課題のみを取得する差分同期モード（updatedSince相当・until無し） */
+  updated_since?: string;
 };
 
 /** yyyy-mm-dd 形式の日付文字列かどうかを検証する */
@@ -50,7 +52,7 @@ function formatDate(date: Date): string {
 function buildIssueFilter(
   body: SyncRequestBody,
 ): { filter: IssueFilterOptions } | { error: string } {
-  const { months, days, from_date, to_date, today, date_type } = body;
+  const { months, days, from_date, to_date, today, date_type, updated_since } = body;
 
   // date_type のバリデーション
   if (date_type !== undefined && date_type !== "created" && date_type !== "updated") {
@@ -63,13 +65,14 @@ function buildIssueFilter(
     days !== undefined,
     from_date !== undefined || to_date !== undefined,
     today === true,
+    updated_since !== undefined,
   ].filter(Boolean).length;
 
   if (modeCount === 0) {
-    return { error: "One of months, days, from_date+to_date, or today is required" };
+    return { error: "One of months, days, from_date+to_date, today, or updated_since is required" };
   }
   if (modeCount > 1) {
-    return { error: "months, days, from_date+to_date, and today are mutually exclusive" };
+    return { error: "months, days, from_date+to_date, today, and updated_since are mutually exclusive" };
   }
 
   let since: string | undefined;
@@ -77,7 +80,18 @@ function buildIssueFilter(
   // months のデフォルトは created、それ以外は updated
   let resolvedDateType: "created" | "updated";
 
-  if (months !== undefined) {
+  if (updated_since !== undefined) {
+    // 差分同期モード: 指定日以降の更新課題のみを取得する（until は設けない）
+    if (!isValidDateString(updated_since)) {
+      return { error: "updated_since must be in yyyy-mm-dd format" };
+    }
+    // updated_since は更新日基準が前提。date_type:created との併用は矛盾するため弾く
+    if (date_type === "created") {
+      return { error: "updated_since cannot be combined with date_type \"created\"" };
+    }
+    since = updated_since;
+    resolvedDateType = "updated";
+  } else if (months !== undefined) {
     if (!Number.isInteger(months) || months <= 0) {
       return { error: "months must be a positive integer" };
     }
@@ -144,6 +158,9 @@ function buildIssueFilter(
  *
  * // date_type で基準を明示的に切り替え
  * POST /api/backlog/sync  { "days": 7, "date_type": "created" }
+ *
+ * // 差分同期（指定日以降の更新分。前回同期日の前日を渡す想定）
+ * POST /api/backlog/sync  { "projectKey": "DSK_DEV", "updated_since": "2026-05-20" }
  */
 export async function POST(request: NextRequest) {
   try {

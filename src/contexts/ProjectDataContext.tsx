@@ -12,6 +12,7 @@ import {
 } from "react";
 import type { Assignee, Project } from "@/types";
 import type { StatusOption } from "@/components/filters/GlobalFilterBar";
+import { computeUpdatedSince } from "@/lib/sync-window";
 
 /** ステータスでフィルタリングされた後の担当者選択肢 */
 type FilteredAssigneeOptions = {
@@ -57,6 +58,8 @@ type ProjectDataContextValue = {
   unsyncedProjectKeys: string[];
   /** 未同期プロジェクトを逐次同期している最中かどうか */
   syncing: boolean;
+  /** 初回ロード完了後、差分同期サイクルが未完了の間 true（進捗画面を維持するためのフラグ） */
+  syncPending: boolean;
   /** 「読み込み中」画面で表示する各プロジェクトの進捗 */
   syncItems: SyncItem[];
   activeStatuses: Set<string>;
@@ -99,11 +102,19 @@ export function ProjectDataProvider({ children }: { children: ReactNode }) {
   const [needsSetup, setNeedsSetup] = useState(false);
   const [unsyncedProjectKeys, setUnsyncedProjectKeys] = useState<string[]>([]);
   const [syncing, setSyncing] = useState(false);
+  // 初回ロード完了〜差分同期サイクル完了までの間 true。
+  // この間は進捗画面を出し続け、通常画面が一瞬描画されるのを防ぐ。
+  const [syncPending, setSyncPending] = useState(false);
   const [syncItems, setSyncItems] = useState<SyncItem[]>([]);
   // 逐次同期が実行中かどうかを同期的に判定するためのフラグ。
   // syncing(state) を effect の依存配列に入れると setSyncing で再実行が走り
   // 多重起動するため、起動制御は再レンダリングを伴わない ref で行う。
   const syncRunningRef = useRef(false);
+  // 差分同期サイクルを 1 マウントにつき 1 回だけ走らせるためのフラグ。
+  const syncDoneRef = useRef(false);
+  // 同期対象キーの決定に使う最新プロジェクト一覧を ref で保持する。
+  // effect の依存配列に projects を入れると無限ループになるため ref から読む。
+  const latestProjectsRef = useRef<Project[]>([]);
   const [activeStatuses, setActiveStatuses] = useState<Set<string>>(new Set());
   const [activeProjects, setActiveProjects] = useState<Set<string>>(new Set());
   const [activeAssignees, setActiveAssignees] = useState<Set<string>>(new Set());
@@ -120,6 +131,8 @@ export function ProjectDataProvider({ children }: { children: ReactNode }) {
 
     setNeedsSetup(data.needsSetup === true);
     setProjects(data.projects);
+    // 同期対象キーの決定に使うため、最新のプロジェクト一覧を ref にも保持する
+    latestProjectsRef.current = data.projects;
     setUnsyncedProjectKeys(data.unsyncedProjectKeys ?? []);
 
     // 全プロジェクトのステータスを集約
@@ -145,47 +158,88 @@ export function ProjectDataProvider({ children }: { children: ReactNode }) {
       .catch((err) =>
         setError(err instanceof Error ? err.message : "Failed to fetch"),
       )
-      .finally(() => setLoading(false));
+      .finally(() => {
+        // ロード完了と同時に同期待ちフラグを立て、同期 effect が走り切るまで
+        // 進捗画面を維持する（通常画面が一瞬出るのを防ぐ）。
+        setSyncPending(true);
+        setLoading(false);
+      });
   }, [loadProjects]);
 
-  // 未同期プロジェクトを検出したら、1 プロジェクトずつ逐次同期する。
-  // Vercel Hobby の関数上限（60秒）に収めるため、全件並行ではなく直列で実行する。
+  // 初回ロード完了後、ダッシュボード読込みのたびに 1 プロジェクトずつ逐次同期する。
+  // 同期済みプロジェクトは差分同期（前回同期日の前日以降の更新分）、未同期プロジェクトは
+  // 直近 30 日分を取得する。Vercel Hobby の関数上限（60秒）に収めるため直列で実行する。
   //
   // 中断（cancelled）方式は採らない。同期処理はサーバー側で完結する副作用であり、
   // クリーンアップで途中中断すると StrictMode の二重マウントや設定画面からの
   // クライアント遷移で「実行中フラグだけ立って処理は中断」という状態が残り、
   // 永遠にローディングが終わらなくなる。一度始めたら最後まで走り切らせる。
+  //
+  // 依存配列に projects / unsyncedProjectKeys を入れない。これらは同期完了後の
+  // loadProjects() で更新され、依存に含めると再実行 → 無限ループになる。
+  // 同期対象は state ではなく ref（latestProjectsRef）から読み、起動は
+  // syncDoneRef / syncRunningRef で「1 マウント 1 サイクル」に制限する。
   useEffect(() => {
-    // 初回ロード中・設定未完了・未同期なしのいずれかなら何もしない
-    if (loading || needsSetup || unsyncedProjectKeys.length === 0) {
-      return;
-    }
-    // 既に逐次同期が走っていれば二重起動しない（ref は再レンダリングを伴わない）
-    if (syncRunningRef.current) {
+    // 初回ロード中・設定未完了・このマウントで同期済み・実行中のいずれかなら何もしない
+    if (loading || needsSetup || syncDoneRef.current || syncRunningRef.current) {
       return;
     }
 
     syncRunningRef.current = true;
-    // この実行で処理するキーを effect 内にキャプチャする（state 変化の影響を受けない）
-    const keysToSync = unsyncedProjectKeys;
+
+    // 同期対象キー＝（同期済みプロジェクトのキー）∪（未同期キー）を重複排除して作る。
+    // syncedAt の解決のため、同期済みプロジェクトは key → project のマップも持つ。
+    const syncedProjects = latestProjectsRef.current;
+    const projectByKey = new Map<string, Project>(
+      syncedProjects.map((p) => [p.projectKey, p]),
+    );
+    const keysToSync: string[] = [];
+    const seen = new Set<string>();
+    for (const p of syncedProjects) {
+      if (!seen.has(p.projectKey)) {
+        seen.add(p.projectKey);
+        keysToSync.push(p.projectKey);
+      }
+    }
+    for (const key of unsyncedProjectKeys) {
+      if (!seen.has(key)) {
+        seen.add(key);
+        keysToSync.push(key);
+      }
+    }
+
+    // 同期対象が 1 件も無い場合は同期処理をスキップする。
+    // この場合も後段の finally で syncDoneRef を立て syncPending を下ろし、
+    // 進捗画面から通常画面へ遷移させる。
+    const hasTargets = keysToSync.length > 0;
 
     const syncSequentially = async () => {
+      if (!hasTargets) return;
       setSyncing(true);
 
-      // 未同期プロジェクトの表示名を Backlog から解決する（key → name マップ）。
-      // 未同期プロジェクトは projects テーブルに行が無く名前を持たないため別途取得する。
+      // 表示名の解決（key → name マップ）。
+      // 同期済みプロジェクトは projects から名前を持つのでそれを使う。
+      // 未同期プロジェクトのみ projects テーブルに行が無く名前を持たないため、
+      // /api/backlog/project-names で別途解決する。
       const nameMap: Record<string, string> = {};
-      try {
-        const res = await fetch("/api/backlog/project-names");
-        if (res.ok) {
-          const data: ProjectNamesResponse = await res.json();
-          (data.projects ?? []).forEach((p) => {
-            nameMap[p.projectKey] = p.name;
-          });
+      for (const p of syncedProjects) {
+        nameMap[p.projectKey] = p.name;
+      }
+      const hasUnsynced = unsyncedProjectKeys.some((k) => !nameMap[k]);
+      if (hasUnsynced) {
+        try {
+          const res = await fetch("/api/backlog/project-names");
+          if (res.ok) {
+            const data: ProjectNamesResponse = await res.json();
+            (data.projects ?? []).forEach((p) => {
+              // 既に同期済みプロジェクト名がある場合は上書きしない
+              if (!nameMap[p.projectKey]) nameMap[p.projectKey] = p.name;
+            });
+          }
+        } catch (err) {
+          // 名前解決の失敗は致命的ではない。key をフォールバック表示にする
+          console.error("Failed to resolve project names:", err);
         }
-      } catch (err) {
-        // 名前解決の失敗は致命的ではない。key をフォールバック表示にする
-        console.error("Failed to resolve project names:", err);
       }
 
       // 進捗一覧を「待機中」で初期化する
@@ -205,13 +259,24 @@ export function ProjectDataProvider({ children }: { children: ReactNode }) {
           ),
         );
 
+        // リクエストボディを決定する。
+        // 同期済みかつ syncedAt が有効 → 差分同期（updated_since = 前日）。
+        // 未同期 or syncedAt が無効（null/空/不正） → 直近 30 日分（days:30）。
+        const project = projectByKey.get(key);
+        let requestBody: Record<string, unknown> = { projectKey: key, days: 30 };
+        if (project && project.syncedAt) {
+          const updatedSince = computeUpdatedSince(project.syncedAt);
+          if (updatedSince) {
+            requestBody = { projectKey: key, updated_since: updatedSince };
+          }
+        }
+
         let ok = false;
         try {
           const res = await fetch("/api/backlog/sync", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            // 直近 1 ヶ月分の更新課題を取得する
-            body: JSON.stringify({ projectKey: key, days: 30 }),
+            body: JSON.stringify(requestBody),
           });
           ok = res.ok;
           if (!ok) {
@@ -233,7 +298,6 @@ export function ProjectDataProvider({ children }: { children: ReactNode }) {
       }
 
       // 同期完了後、最新のプロジェクトデータを再取得する。
-      // 成功した分は projects テーブルに行ができ、unsyncedProjectKeys から外れてループが止まる。
       try {
         await loadProjects();
       } catch (err) {
@@ -242,11 +306,17 @@ export function ProjectDataProvider({ children }: { children: ReactNode }) {
     };
 
     void syncSequentially().finally(() => {
-      // 成功・失敗いずれでも実行中フラグと UI 状態を必ず戻す
+      // 成功・失敗いずれでも実行中フラグと UI 状態を必ず戻す。
+      // syncDoneRef を立てて 1 マウント 1 サイクルに制限し、無限ループを防ぐ。
       syncRunningRef.current = false;
       setSyncing(false);
+      syncDoneRef.current = true;
+      setSyncPending(false);
     });
-  }, [unsyncedProjectKeys, needsSetup, loading, loadProjects]);
+    // unsyncedProjectKeys / projects は依存に含めない。これらは同期後の loadProjects() で
+    // 更新され、依存に入れると再実行 → 無限ループになる。対象キーは ref から読む。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, needsSetup, loadProjects]);
 
   /** 全プロジェクトのステータスを重複排除した選択肢一覧 */
   const statusOptions = useMemo(() => {
@@ -331,6 +401,7 @@ export function ProjectDataProvider({ children }: { children: ReactNode }) {
       needsSetup,
       unsyncedProjectKeys,
       syncing,
+      syncPending,
       syncItems,
       activeStatuses,
       setActiveStatuses,
@@ -344,7 +415,7 @@ export function ProjectDataProvider({ children }: { children: ReactNode }) {
       activeAssignees,
       setActiveAssignees,
     }),
-    [projects, loading, error, needsSetup, unsyncedProjectKeys, syncing, syncItems, activeStatuses, activeProjects, statusOptions, projectNames, statusColorMap, assigneeOptions, filteredAssigneeOptions, activeAssignees],
+    [projects, loading, error, needsSetup, unsyncedProjectKeys, syncing, syncPending, syncItems, activeStatuses, activeProjects, statusOptions, projectNames, statusColorMap, assigneeOptions, filteredAssigneeOptions, activeAssignees],
   );
 
   return (

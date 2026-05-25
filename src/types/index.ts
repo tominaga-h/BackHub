@@ -54,6 +54,8 @@ export type Project = {
   icon?: string;
   issues: Issue[];
   settings: ProjectSettings;
+  /** 最後に同期した日時(ISO)。未同期は null */
+  syncedAt: string | null;
 };
 
 export type ProjectFilters = {

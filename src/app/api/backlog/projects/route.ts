@@ -64,6 +64,7 @@ async function loadProjectFromDb(
     project_key: string;
     name: string;
     icon_url: string | null;
+    synced_at: string | null;
   },
   host: string,
 ): Promise<Project> {
@@ -198,6 +199,7 @@ async function loadProjectFromDb(
     projectKey: projectRow.project_key,
     name: projectRow.name,
     icon: projectRow.icon_url ?? undefined,
+    syncedAt: projectRow.synced_at,
     issues: mappedIssues,
     settings: {
       statuses: mappedStatuses,
@@ -251,7 +253,7 @@ export async function GET() {
 
     const { data: projectRows, error: projectsError } = await db
       .from("projects")
-      .select("id, project_key, name, icon_url")
+      .select("id, project_key, name, icon_url, synced_at")
       // ログインユーザーが設定したプロジェクトキーのみに絞る
       .in("project_key", settings.projectKeys)
       .order("project_key");

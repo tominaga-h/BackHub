@@ -19,7 +19,7 @@ import { ProjectDataProvider, useProjectData } from "@/contexts/ProjectDataConte
  */
 function DashboardShell({ children }: { children: React.ReactNode }) {
   const {
-    loading, error, needsSetup, syncing, syncItems, unsyncedProjectKeys, projects, projectNames, statusOptions, activeStatuses, setActiveStatuses,
+    loading, error, needsSetup, syncing, syncPending, syncItems, projects, projectNames, statusOptions, activeStatuses, setActiveStatuses,
     activeProjects, setActiveProjects,
     filteredAssigneeOptions, activeAssignees, setActiveAssignees,
   } = useProjectData();
@@ -86,15 +86,15 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // 未同期プロジェクトを逐次同期している間は、進捗一覧を表示する。
+  // 差分同期サイクルが走っている間（または同期待ちの間）は、進捗一覧を表示する。
   // syncing が立つ前（loading 完了〜同期開始の 1 フレーム）に通常画面が
-  // 一瞬描画されるのを防ぐため、未同期キーが残っている間もこの画面を出す。
+  // 一瞬描画されるのを防ぐため、syncPending の間もこの画面を出す。
   // projects.length === 0 の案内（下の分岐）より前に置く。
-  if (syncing || unsyncedProjectKeys.length > 0) {
+  if (syncing || syncPending) {
     const doneCount = syncItems.filter((i) => i.status === "done").length;
-    // 名前解決中で syncItems がまだ空の場合は未同期キー数を総数として使う
-    const totalCount =
-      syncItems.length > 0 ? syncItems.length : unsyncedProjectKeys.length;
+    // 総数は進捗一覧の件数。名前解決前で syncItems が空の 1 フレームは
+    // 下の syncItems.length > 0 ガードで進捗リスト自体が出ないため 0/0 でよい。
+    const totalCount = syncItems.length;
     return (
       <div data-component="DashboardLayout" className="flex min-h-screen flex-col bg-[#f5f7f9]">
         <Header />
